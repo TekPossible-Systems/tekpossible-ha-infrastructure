@@ -4,14 +4,14 @@ import * as cdk from 'aws-cdk-lib';
 import { Happy } from '../lib/happy';
 
 const app = new cdk.App();
-new CdkProjectStack(app, 'CdkProjectStack', {
+new Happy(app, 'CdkProjectStack', {
+  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
 
   /* Uncomment the next line to specialize this stack for the AWS Account
    * and Region that are implies
-  // env: { account: process.env.CDK_DEFAULT_ACCOUNT, region: process.env.CDK_DEFAULT_REGION },
 
   /* Uncomment the next line if you know exactly what Account and Region you
    * want to deploy the stack to. */
