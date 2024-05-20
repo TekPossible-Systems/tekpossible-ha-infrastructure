@@ -152,6 +152,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
   // TODO: Need to research the ASG a little bit more
   const server_a_asg_az1 = new autoscaling.AutoScalingGroup(scope, config.vpc_name+"ServerA-ASG", {
+    autoScalingGroupName: config.vpc_name + "ServerA-ASG",
     vpc: happy_vpc, 
     instanceType:new ec2.InstanceType(instance_type),
     role: server_instance_role,
@@ -160,12 +161,18 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     maxCapacity: config.max_alpha_server_capacity,
     vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[0], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),
     keyPair: config.keyPair,
-    securityGroup: server_a_sg
-
+    securityGroup: server_a_sg,
+    allowAllOutbound: true
 
   });
 
+  server_a_asg_az1.scaleOnCpuUtilization(config.vpc_name+'ServerA-ASG', {
+    targetUtilizationPercent: 70, 
+    disableScaleIn: false,
+    estimatedInstanceWarmup: cdk.Duration.minutes(10)
+  });
 
+  server_a_asg_az1.protectNewInstancesFromScaleIn()
 
 }
 
