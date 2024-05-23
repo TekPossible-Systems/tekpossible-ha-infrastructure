@@ -156,7 +156,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     vpc: happy_vpc, 
     instanceType:new ec2.InstanceType(instance_type),
     role: server_instance_role,
-    machineImage: config.ami_arn,
+    machineImage: ec2.MachineImage.genericLinux({ 'us-east-1': 'ami-0c41531b8d18cc72b', 'us-east-2': 'ami-078cbc4c2d057c244', 'us-west-1': 'ami-0fa0ed170a59f4917', 'us-west-2': 'ami-0d8185e750f8dfbd0' }),
     minCapacity: config.min_alpha_server_capacity,
     maxCapacity: config.max_alpha_server_capacity,
     vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[0], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),

@@ -1,0 +1,41 @@
+{
+    "aws_account": "383009235696",
+    "region": "us-east-2",
+    "vpc_name": "HappyVPC", 
+    "keyPair": "tekp-keypair",
+    "ami_id": "ami-0a45c8b16782f3406",
+    "min_alpha_servers": 2,
+    "min_bravo_servers": 2,
+    "azs": [
+        "us-east-2a",
+        "us-east-2b"
+    ],
+    "alpha_server_ports": [
+        22,
+        80,
+        443,
+        8000,
+        8001,
+        8002,
+        8003,
+        9090,
+        10001,
+        10002
+    ],
+    "bravo_server_ports": [
+        22,
+        80,
+        443,
+        8000,
+        8001,
+        8002,
+        8003,
+        9090,
+        10003,
+        10004
+    ],
+    "min_alpha_server_capacity": 2,
+    "max_alpha_server_capacity": 4,
+    "min_bravo_server_capacity": 2,
+    "max_bravo_server_capacity": 6
+}
