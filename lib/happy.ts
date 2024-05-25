@@ -5,78 +5,11 @@ import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as imgbuilder from 'aws-cdk-lib/aws-imagebuilder';
 import * as iam from 'aws-cdk-lib/aws-iam';
-
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
-// AWS HAPPy Infrastructure Functions
 
-// function create_server_alpha_template(scope: Construct, env_type: string, ami_params: any){
-//   var instance_type = '';
-//   if (env_type == "demo"){
-//     console.log("Server A Environment type is demo! Using t2.micro instance...") 
-//     instance_type = 't2.micro';
+// Read files from the assets folder
+import { readFileSync } from 'fs';
 
-//   }
-//   else if (env_type == "small"){
-//     console.log("Server A Environment type is small! Using t3.medium instance...") 
-//     instance_type = 't3.medium';
-
-//   } else if (env_type == 'production'){    
-//     console.log("Server A Environment type is production! Using c6in.8xlarge instance...") 
-//     instance_type = 'c6in.8xlarge';
-
-//   } else {
-//     instance_type = 't2.micro';
-//     console.log("Incorrect env_type defined, so I will use a t2.micro instance...");
-
-//   }
-
-  // const server_alpha_config = new imgbuilder.CfnInfrastructureConfiguration(scope, 'Happy-ServerB-AMI-InfraConfig-'+ami_params.name, {
-  //   name: 'Happy-ServerB-AMI-InfraConfig-'+ami_params.name,
-  //   instanceProfileName: ami_params.instance_profile_name,
-  //   instanceTypes: [instance_type],
-  //   keyPair: ami_params.keyPair
-  // });
-
-  // const server_alpha_ami = new imgbuilder.CfnImage(scope, 'Happy-ServerB-AMI', {
-  //   infrastructureConfigurationArn: server_alpha_config.attrArn,
-
-  // });
-
-// }
-
-// function create_server_bravo_template(scope: Construct, env_type: string, ami_params: any){
-//   var instance_type = '';
-//   if (env_type == "demo"){
-//     console.log("Server B Environment type is demo! Using t2.micro instance...")
-//     instance_type = 't2.micro';
-
-//   }
-//   else if (env_type == "small"){
-//     console.log("Server B Environment type is small! Using t3.medium instance...")
-//     instance_type = 't3.medium';
-
-//   } else if (env_type == 'production'){   
-//     console.log("Server B Environment type is production! Using i4i.metal instance...") 
-//     instance_type = 'i4i.metal';
-
-//   } else {
-//     instance_type = 't2.micro';
-//     console.log("Incorrect env_type defined, so I will use a t2.micro instance...");
-
-//   }
-
-//   const server_bravo_config = new imgbuilder.CfnInfrastructureConfiguration(scope, 'Happy-ServerB-AMI-InfraConfig-'+ami_params.name, {
-//     name: 'Happy-ServerB-AMI-InfraConfig-'+ami_params.name,
-//     instanceProfileName: ami_params.instance_profile_name,
-//     instanceTypes: [instance_type],
-//     keyPair: ami_params.keyPair
-//   });
-
-//   const server_bravo_ami = new imgbuilder.CfnImage(scope, 'Happy-ServerB-AMI', {
-//     infrastructureConfigurationArn: server_bravo_config.attrArn,
-
-//   });
-// }
 /* There are 3 env types: 
 * 1. Demo - this is where all instance types are t2.micro
 * 2. Small - this is where all instance types are t3.medium
@@ -84,7 +17,6 @@ import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 */
 
 function create_happy_vpc(scope: Construct, region_name: string, config: any){
-  const env_type = config.environment; 
 
   const server_instance_role = new iam.Role(scope, "Happy-Server-IAM-Role", {
     roleName: 'Happy-Server-IAM-Role',
@@ -130,49 +62,91 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     server_b_sg.addIngressRule(ec2.Peer.ipv4("172.16.0.0/16"), ec2.Port.tcp(port));
   });
 
-  var instance_type = '';
-  if (env_type == "demo"){
-    console.log("Server B Environment type is demo! Using t2.micro instance...")
-    instance_type = 't2.micro';
+  var instance_type_alpha = '';
+  var instance_type_bravo = '';
+  if (config.env_type == "demo"){
+    console.log("Server A Environment type is demo! Using t2.micro instance...");
+    console.log("Server B Environment type is demo! Using t2.micro instance...");
+    instance_type_alpha = 't2.micro';
+    instance_type_bravo = 't2.micro';
 
   }
-  else if (env_type == "small"){
-    console.log("Server B Environment type is small! Using t3.medium instance...")
-    instance_type = 't3.medium';
+  else if (config.env_type == "small"){
+    console.log("Server A Environment type is small! Using t3.medium instance...");
+    console.log("Server B Environment type is small! Using t3.medium instance...");
+    instance_type_alpha = 't3.medium';
+    instance_type_bravo = 't3.medium';
 
-  } else if (env_type == 'production'){   
-    console.log("Server B Environment type is production! Using i4i.metal instance...") 
-    instance_type = 'i4i.metal';
+  } else if (config.env_type == 'production'){   
+    console.log("Server A Environment type is production! Using c6in.8xlarge instance..."); 
+    console.log("Server B Environment type is production! Using i4i.metal instance...");
+    instance_type_alpha = 'c6in.8xlarge';
+    instance_type_bravo = 'i4i.metal';
 
   } else {
-    instance_type = 't2.micro';
-    console.log("Incorrect env_type defined, so I will use a t2.micro instance...");
+    console.log("Incorrect env_type defined, so I will use a t2.micro instance for both servers...");
+    instance_type_alpha = 't2.micro';
+    instance_type_bravo = 't2.micro';
+
+  }
+  var autoscaling_groups_alpha = [];
+  var autoscaling_groups_bravo = [];
+  var alpha_user_data = readFileSync("./assets/init_alpha.sh", "utf-8");
+  var bravo_user_data = readFileSync("./assets/init_bravo.sh", "utf-8");
+
+  const keypair = ec2.KeyPair.fromKeyPairName(scope, config.keyPair, config.keyPair)
+  for (var i = 0; i < config.azs.length; i++){
+    var asg_alpha = new autoscaling.AutoScalingGroup(scope, config.vpc_name+"ServerA-ASG-AZ" + String(i+1), {
+      autoScalingGroupName: config.vpc_name + "ServerA-ASG-AZ" + String(i+1),
+      vpc: happy_vpc, 
+      instanceType:new ec2.InstanceType(instance_type_alpha),
+      role: server_instance_role,
+      machineImage: ec2.MachineImage.genericLinux({ 'us-east-1': 'ami-0c41531b8d18cc72b', 'us-east-2': 'ami-078cbc4c2d057c244', 'us-west-1': 'ami-0fa0ed170a59f4917', 'us-west-2': 'ami-0d8185e750f8dfbd0' }),
+      minCapacity: config.min_alpha_server_capacity,
+      maxCapacity: config.max_alpha_server_capacity,
+      vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),
+      keyPair: keypair,
+      securityGroup: server_a_sg,
+      allowAllOutbound: true
+    });
+
+    var asg_bravo = new autoscaling.AutoScalingGroup(scope, config.vpc_name+"ServerB-ASG-AZ" + String(i+1), {
+      autoScalingGroupName: config.vpc_name + "ServerB-ASG-AZ" + String(i+1),
+      vpc: happy_vpc, 
+      instanceType:new ec2.InstanceType(instance_type_bravo),
+      role: server_instance_role,
+      machineImage: ec2.MachineImage.genericLinux({ 'us-east-1': 'ami-0c41531b8d18cc72b', 'us-east-2': 'ami-078cbc4c2d057c244', 'us-west-1': 'ami-0fa0ed170a59f4917', 'us-west-2': 'ami-0d8185e750f8dfbd0' }),
+      minCapacity: config.min_bravo_server_capacity,
+      maxCapacity: config.max_bravo_server_capacity,
+      vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),
+      keyPair: keypair,
+      securityGroup: server_b_sg,
+      allowAllOutbound: true
+    });
+    autoscaling_groups_alpha[i] = asg_alpha;
+    autoscaling_groups_bravo[i] = asg_bravo;
+
+    asg_alpha.scaleOnCpuUtilization(config.vpc_name+'ServerA-ASG', {
+      targetUtilizationPercent: config.max_alpha_server_cpu_pct, 
+      disableScaleIn: false,
+      estimatedInstanceWarmup: cdk.Duration.minutes(10)
+    });
+    asg_alpha.addUserData(alpha_user_data);
+    asg_alpha.protectNewInstancesFromScaleIn()
+
+    asg_bravo.scaleOnCpuUtilization(config.vpc_name+'ServerB-ASG', {
+      targetUtilizationPercent: config.max_bravo_server_cpu_pct, 
+      disableScaleIn: false,
+      estimatedInstanceWarmup: cdk.Duration.minutes(10)
+    });
+
+    asg_bravo.protectNewInstancesFromScaleIn()
+    asg_bravo.addUserData(bravo_user_data);
 
   }
 
-  // TODO: Need to research the ASG a little bit more
-  const server_a_asg_az1 = new autoscaling.AutoScalingGroup(scope, config.vpc_name+"ServerA-ASG", {
-    autoScalingGroupName: config.vpc_name + "ServerA-ASG",
-    vpc: happy_vpc, 
-    instanceType:new ec2.InstanceType(instance_type),
-    role: server_instance_role,
-    machineImage: ec2.MachineImage.genericLinux({ 'us-east-1': 'ami-0c41531b8d18cc72b', 'us-east-2': 'ami-078cbc4c2d057c244', 'us-west-1': 'ami-0fa0ed170a59f4917', 'us-west-2': 'ami-0d8185e750f8dfbd0' }),
-    minCapacity: config.min_alpha_server_capacity,
-    maxCapacity: config.max_alpha_server_capacity,
-    vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[0], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),
-    keyPair: config.keyPair,
-    securityGroup: server_a_sg,
-    allowAllOutbound: true
 
-  });
 
-  server_a_asg_az1.scaleOnCpuUtilization(config.vpc_name+'ServerA-ASG', {
-    targetUtilizationPercent: 70, 
-    disableScaleIn: false,
-    estimatedInstanceWarmup: cdk.Duration.minutes(10)
-  });
-
-  server_a_asg_az1.protectNewInstancesFromScaleIn()
 
 }
 
