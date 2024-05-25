@@ -5,6 +5,9 @@ dnf install -y uuid
 hostnamectl set-hostname $(uuid -v 4)-BravoServer
 curl -o wazuh-agent-4.7.4-1.x86_64.rpm https://packages.wazuh.com/4.x/yum/wazuh-agent-4.7.4-1.x86_64.rpm
 sudo WAZUH_MANAGER='REPLACE' rpm -ivh wazuh-agent-4.7.4-1.x86_64.rpm
+sudo systemctl daemon-reload
+sudo systemctl enable wazuh-agent
+sudo systemctl start wazuh-agent
 
 # AWS SSN Agent Deploy
 sudo dnf install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
