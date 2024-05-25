@@ -33,7 +33,7 @@ cat << EOF > /opt/aws/amazon-cloudwatch-agent/etc/amazon-cloudwatch-agent.json
                                         {
                                                 "file_path": "/var/log/httpd/ssl_error_log",
                                                 "log_group_class": "STANDARD",
-                                                "log_group_name": "httpd-ssl-erorr-log",
+                                                "log_group_name": "httpd-ssl-error-log",
                                                 "log_stream_name": "{instance_id}",
                                                 "retention_in_days": 7
                                         }
