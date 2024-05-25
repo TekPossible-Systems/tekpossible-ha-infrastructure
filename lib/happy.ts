@@ -132,7 +132,6 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       estimatedInstanceWarmup: cdk.Duration.minutes(10)
     });
     asg_alpha.addUserData(alpha_user_data);
-    asg_alpha.protectNewInstancesFromScaleIn()
 
     asg_bravo.scaleOnCpuUtilization(config.vpc_name+'ServerB-ASG', {
       targetUtilizationPercent: config.max_bravo_server_cpu_pct, 
@@ -140,7 +139,6 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       estimatedInstanceWarmup: cdk.Duration.minutes(10)
     });
 
-    asg_bravo.protectNewInstancesFromScaleIn()
     asg_bravo.addUserData(bravo_user_data);
 
   }
