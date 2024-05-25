@@ -4,6 +4,7 @@
     "vpc_name": "HappyVPC", 
     "keyPair": "tekp-keypair",
     "env_type": "demo",
+    "wazuh_server_name": "wazuh.tekpossible.com",
     "azs": [
         "us-east-2a",
         "us-east-2b"
