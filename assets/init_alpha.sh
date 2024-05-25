@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # CloudWatch Agent Deploy
+dnf install -y uuid
+hostnamectl set-hostname $(uuid -v 4)-AlphaServer
 sudo dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
 sudo dnf install -y https://amazoncloudwatch-agent.s3.amazonaws.com/amazon_linux/amd64/latest/amazon-cloudwatch-agent.rpm rsyslog collectd
 sudo systemctl enable --now rsyslog
