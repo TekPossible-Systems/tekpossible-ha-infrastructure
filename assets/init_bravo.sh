@@ -23,4 +23,15 @@ sudo systemctl enable --now amazon-ssm-agent
 # Update and reboot the system
 sudo dnf update -y
 # sudo shutdown -r -h +1
-# Todo: figure out the right grace time
+
+# Trigger the lifecycle hook completion and install awscli dependencies
+sudo dnf install python3-pip -y
+sudo pip3 install awscli
+
+TOKEN=`curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600"`
+
+INSTANCE_ID=`curl -H "X-aws-ec2-metadata-token: $TOKEN" "http://169.254.169.254/latest/meta-data/instance-id"`
+
+aws autoscaling complete-lifecycle-action --lifecycle-action-result CONTINUE \
+  --instance-id "$INSTANCE_ID" --lifecycle-hook-name "REPLACE_LC_HOOK_NAME" \
+  --auto-scaling-group-name "REPLACE_ASG_NAME_HERE"

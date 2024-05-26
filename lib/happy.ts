@@ -18,6 +18,8 @@ import { readFileSync } from 'fs';
 
 function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
+  const launchTemplateRequireImdsv2Aspect = new ec2.LaunchTemplateRequireImdsv2Aspect({ suppressWarnings: false  });
+
   const server_instance_role = new iam.Role(scope, "Happy-Server-IAM-Role", {
     roleName: 'Happy-Server-IAM-Role',
     assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
@@ -94,12 +96,9 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
   var alpha_user_data = readFileSync("./assets/init_alpha.sh", "utf-8");
   var bravo_user_data = readFileSync("./assets/init_bravo.sh", "utf-8");
   
-  alpha_user_data = alpha_user_data.replace("REPLACE", config.wazuh_server_name);
-  bravo_user_data = bravo_user_data.replace("REPLACE", config.wazuh_server_name);
-
   const keypair = ec2.KeyPair.fromKeyPairName(scope, config.keyPair, config.keyPair)
   for (var i = 0; i < config.azs.length; i++) {
-    var asg_alpha = new autoscaling.AutoScalingGroup(scope, config.vpc_name+"ServerA-ASG-AZ" + String(i+1), {
+    var asg_alpha = new autoscaling.AutoScalingGroup(scope, config.vpc_name + "ServerA-ASG-AZ" + String(i+1), {
       autoScalingGroupName: config.vpc_name + "ServerA-ASG-AZ" + String(i+1),
       vpc: happy_vpc, 
       instanceType:new ec2.InstanceType(instance_type_alpha),
@@ -108,13 +107,22 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       minCapacity: config.min_alpha_server_capacity,
       maxCapacity: config.max_alpha_server_capacity,
       healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.minutes(config.alpha_server_warmup_time_minutes) }),
+      defaultInstanceWarmup: cdk.Duration.minutes(config.alpha_server_warmup_time_minutes),
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),
       keyPair: keypair,
       securityGroup: server_a_sg,
       allowAllOutbound: true
     });
 
-    var asg_bravo = new autoscaling.AutoScalingGroup(scope, config.vpc_name+"ServerB-ASG-AZ" + String(i+1), {
+    var asg_alpha_lc_hook = new autoscaling.LifecycleHook(scope, config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-LC-HOOK", {
+      autoScalingGroup: asg_alpha,
+      lifecycleTransition: autoscaling.LifecycleTransition.INSTANCE_LAUNCHING,
+      defaultResult: autoscaling.DefaultResult.ABANDON,
+      heartbeatTimeout: cdk.Duration.minutes(config.alpha_server_warmup_time_minutes),
+      lifecycleHookName: "ServerA-ASG-AZ" + String(i+1) + "LC-HOOK"
+    });
+    
+    var asg_bravo = new autoscaling.AutoScalingGroup(scope, config.vpc_name + "ServerB-ASG-AZ" + String(i+1), {
       autoScalingGroupName: config.vpc_name + "ServerB-ASG-AZ" + String(i+1),
       vpc: happy_vpc, 
       instanceType:new ec2.InstanceType(instance_type_bravo),
@@ -123,25 +131,39 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       minCapacity: config.min_bravo_server_capacity,
       maxCapacity: config.max_bravo_server_capacity,
       healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.minutes(config.bravo_server_warmup_time_minutes) }),
+      defaultInstanceWarmup: cdk.Duration.minutes(config.bravo_server_warmup_time_minutes),
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),
-      keyPair: keypair,
+      keyPair: keypair, 
       securityGroup: server_b_sg,
-      allowAllOutbound: true
+      allowAllOutbound: true 
     });
+
+    var asg_bravo_lc_hook = new autoscaling.LifecycleHook(scope, config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-LC-HOOK", {
+      autoScalingGroup: asg_alpha,
+      lifecycleTransition: autoscaling.LifecycleTransition.INSTANCE_LAUNCHING,
+      defaultResult: autoscaling.DefaultResult.ABANDON,
+      heartbeatTimeout: cdk.Duration.minutes(config.bravo_server_warmup_time_minutes),
+      lifecycleHookName: "ServerB-ASG-AZ" + String(i+1) + "LC-HOOK"
+    });
+
     autoscaling_groups_alpha[i] = asg_alpha;
     autoscaling_groups_bravo[i] = asg_bravo;
-
+    
+    alpha_user_data = alpha_user_data.replace("REPLACE_LC_HOOK_NAME", config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-LC-HOOK");
+    alpha_user_data = alpha_user_data.replace("REPLACE_ASG_NAME_HERE", config.vpc_name + "ServerB-ASG-AZ" + String(i+1));   
+    
+    bravo_user_data = bravo_user_data.replace("REPLACE_LC_HOOK_NAME", config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-LC-HOOK");
+    bravo_user_data = bravo_user_data.replace("REPLACE_ASG_NAME_HERE", config.vpc_name + "ServerB-ASG-AZ" + String(i+1));
+    
     asg_alpha.scaleOnCpuUtilization(config.vpc_name+'ServerA-ASG', {
       targetUtilizationPercent: config.max_alpha_server_cpu_pct, 
       disableScaleIn: false,
-      estimatedInstanceWarmup: cdk.Duration.minutes(config.alpha_server_warmup_time_minutes)
     });
     asg_alpha.addUserData(alpha_user_data);
 
     asg_bravo.scaleOnCpuUtilization(config.vpc_name+'ServerB-ASG', {
       targetUtilizationPercent: config.max_bravo_server_cpu_pct, 
       disableScaleIn: false,
-      estimatedInstanceWarmup: cdk.Duration.minutes(config.bravo_server_warmup_time_minutes)
     });
 
     asg_bravo.addUserData(bravo_user_data);
