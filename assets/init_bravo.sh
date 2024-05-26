@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Wazuh Agent Deploy
-dnf install -y uuid
-hostnamectl set-hostname $(uuid -v 4)-BravoServer
+sudo dnf install -y uuid
+sudo hostnamectl set-hostname $(uuid -v 4)-BravoServer
 curl -o wazuh-agent-4.7.4-1.x86_64.rpm https://packages.wazuh.com/4.x/yum/wazuh-agent-4.7.4-1.x86_64.rpm
 sudo WAZUH_MANAGER='REPLACE' rpm -ivh wazuh-agent-4.7.4-1.x86_64.rpm
 sudo systemctl daemon-reload
@@ -20,6 +20,6 @@ sudo systemctl enable --now amazon-ssm-agent
 # chmod +x ./install
 # sudo ./install auto
 
-# Update and Reboot the system
+# Update and reboot the system
 sudo dnf update -y
 sudo shutdown -r -h +1

@@ -98,7 +98,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
   bravo_user_data = bravo_user_data.replace("REPLACE", config.wazuh_server_name);
 
   const keypair = ec2.KeyPair.fromKeyPairName(scope, config.keyPair, config.keyPair)
-  for (var i = 0; i < config.azs.length; i++){
+  for (var i = 0; i < config.azs.length; i++) {
     var asg_alpha = new autoscaling.AutoScalingGroup(scope, config.vpc_name+"ServerA-ASG-AZ" + String(i+1), {
       autoScalingGroupName: config.vpc_name + "ServerA-ASG-AZ" + String(i+1),
       vpc: happy_vpc, 
@@ -107,6 +107,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       machineImage: ec2.MachineImage.genericLinux({ 'us-east-1': 'ami-0fe630eb857a6ec83', 'us-east-2': 'ami-078cbc4c2d057c244', 'us-west-1': 'ami-014b33341e3a1178e', 'us-west-2': 'ami-0f7197c592205b389' }),
       minCapacity: config.min_alpha_server_capacity,
       maxCapacity: config.max_alpha_server_capacity,
+      healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.minutes(config.alpha_server_warmup_time_minutes) }),
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),
       keyPair: keypair,
       securityGroup: server_a_sg,
@@ -118,8 +119,10 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       vpc: happy_vpc, 
       instanceType:new ec2.InstanceType(instance_type_bravo),
       role: server_instance_role,
-      machineImage: ec2.MachineImage.genericLinux({ 'us-east-1': 'ami-0fe630eb857a6ec83', 'us-east-2': 'ami-078cbc4c2d057c244', 'us-west-1': 'ami-014b33341e3a1178e', 'us-west-2': 'ami-0f7197c592205b389' }),      minCapacity: config.min_bravo_server_capacity,
+      machineImage: ec2.MachineImage.genericLinux({ 'us-east-1': 'ami-0fe630eb857a6ec83', 'us-east-2': 'ami-078cbc4c2d057c244', 'us-west-1': 'ami-014b33341e3a1178e', 'us-west-2': 'ami-0f7197c592205b389' }),
+      minCapacity: config.min_bravo_server_capacity,
       maxCapacity: config.max_bravo_server_capacity,
+      healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.minutes(config.bravo_server_warmup_time_minutes) }),
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),
       keyPair: keypair,
       securityGroup: server_b_sg,

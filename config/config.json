@@ -12,7 +12,7 @@
     "min_alpha_server_capacity": 1,
     "max_alpha_server_capacity": 2,
     "max_alpha_server_cpu_pct": 70,
-    "alpha_server_warmup_time_minutes": 20,
+    "alpha_server_warmup_time_minutes":  15,
     "alpha_server_ports": [
         22,
         80,
@@ -28,7 +28,7 @@
     "min_bravo_server_capacity": 1,
     "max_bravo_server_capacity": 2,
     "max_bravo_server_cpu_pct": 70,
-    "bravo_server_warmup_time_minutes" : 20,
+    "bravo_server_warmup_time_minutes" : 15,
     "bravo_server_ports": [
         22,
         80,
