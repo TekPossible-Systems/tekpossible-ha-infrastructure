@@ -20,4 +20,6 @@ sudo systemctl enable --now amazon-ssm-agent
 # chmod +x ./install
 # sudo ./install auto
 
+# Update and reboot the system
 sudo dnf update -y
+sudo shutdown -r -h +1
