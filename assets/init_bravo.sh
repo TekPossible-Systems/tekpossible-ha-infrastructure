@@ -22,4 +22,5 @@ sudo systemctl enable --now amazon-ssm-agent
 
 # Update and reboot the system
 sudo dnf update -y
-sudo shutdown -r -h +1
+# sudo shutdown -r -h +1
+# Todo: figure out the right grace time
