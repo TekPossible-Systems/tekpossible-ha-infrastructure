@@ -104,7 +104,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       vpc: happy_vpc, 
       instanceType:new ec2.InstanceType(instance_type_alpha),
       role: server_instance_role,
-      machineImage: ec2.MachineImage.genericLinux({ 'us-east-1': 'ami-0c41531b8d18cc72b', 'us-east-2': 'ami-078cbc4c2d057c244', 'us-west-1': 'ami-0fa0ed170a59f4917', 'us-west-2': 'ami-0d8185e750f8dfbd0' }),
+      machineImage: ec2.MachineImage.genericLinux({ 'us-east-1': 'ami-0fe630eb857a6ec83', 'us-east-2': 'ami-078cbc4c2d057c244', 'us-west-1': 'ami-014b33341e3a1178e', 'us-west-2': 'ami-0f7197c592205b389' }),
       minCapacity: config.min_alpha_server_capacity,
       maxCapacity: config.max_alpha_server_capacity,
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),
@@ -118,8 +118,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       vpc: happy_vpc, 
       instanceType:new ec2.InstanceType(instance_type_bravo),
       role: server_instance_role,
-      machineImage: ec2.MachineImage.genericLinux({ 'us-east-1': 'ami-0c41531b8d18cc72b', 'us-east-2': 'ami-078cbc4c2d057c244', 'us-west-1': 'ami-0fa0ed170a59f4917', 'us-west-2': 'ami-0d8185e750f8dfbd0' }),
-      minCapacity: config.min_bravo_server_capacity,
+      machineImage: ec2.MachineImage.genericLinux({ 'us-east-1': 'ami-0fe630eb857a6ec83', 'us-east-2': 'ami-078cbc4c2d057c244', 'us-west-1': 'ami-014b33341e3a1178e', 'us-west-2': 'ami-0f7197c592205b389' }),      minCapacity: config.min_bravo_server_capacity,
       maxCapacity: config.max_bravo_server_capacity,
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),
       keyPair: keypair,
@@ -132,14 +131,14 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     asg_alpha.scaleOnCpuUtilization(config.vpc_name+'ServerA-ASG', {
       targetUtilizationPercent: config.max_alpha_server_cpu_pct, 
       disableScaleIn: false,
-      estimatedInstanceWarmup: cdk.Duration.minutes(10)
+      estimatedInstanceWarmup: cdk.Duration.minutes(config.alpha_server_warmup_time_minutes)
     });
     asg_alpha.addUserData(alpha_user_data);
 
     asg_bravo.scaleOnCpuUtilization(config.vpc_name+'ServerB-ASG', {
       targetUtilizationPercent: config.max_bravo_server_cpu_pct, 
       disableScaleIn: false,
-      estimatedInstanceWarmup: cdk.Duration.minutes(10)
+      estimatedInstanceWarmup: cdk.Duration.minutes(config.bravo_server_warmup_time_minutes)
     });
 
     asg_bravo.addUserData(bravo_user_data);
