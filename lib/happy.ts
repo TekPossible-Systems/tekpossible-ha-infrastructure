@@ -6,7 +6,8 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as imgbuilder from 'aws-cdk-lib/aws-imagebuilder';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
-import * as elb from 'aws-cdk-lib/aws-elasticloadbalancing';
+import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as elb_tgt from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 
 // Read files from the assets folder
 import { readFileSync } from 'fs';
@@ -100,6 +101,18 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
   bravo_user_data = bravo_user_data.replace("REPLACE", config.wazuh_server_name);
 
   const keypair = ec2.KeyPair.fromKeyPairName(scope, config.keyPair, config.keyPair)
+
+  const loadbalancer_security_group = new ec2.SecurityGroup(scope, config.vpc_name + "NLB-SG", {
+    vpc: happy_vpc, 
+    allowAllOutbound: true
+  });
+
+  config.loadbalancer_external_connections.forEach(function(port: any) {
+    loadbalancer_security_group.addIngressRule(ec2.Peer.ipv4("0.0.0.0/0"), ec2.Port.tcp(port));
+  });
+  
+
+
   for (var i = 0; i < config.azs.length; i++) {
     var asg_alpha = new autoscaling.AutoScalingGroup(scope, config.vpc_name + "ServerA-ASG-AZ" + String(i+1), {
       autoScalingGroupName: config.vpc_name + "ServerA-ASG-AZ" + String(i+1),
@@ -149,44 +162,44 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
     asg_bravo.addUserData(bravo_user_data);
 
-    var alpha_lb = new elb.LoadBalancer(scope, config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-CLB", {
+    var alpha_lb = new elb.NetworkLoadBalancer(scope, config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-NLB", {
       vpc: happy_vpc,
-      subnetSelection: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
-      internetFacing: false, // Create an internal load balancer,
-      crossZone: false,
-      healthCheck: {
-        port: config.loadbalancer_external_connections[0]
-      }
+      vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
+      internetFacing: true, // Create an internet-facing load balancer,
+      crossZoneEnabled: false,
+      loadBalancerName: config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-NLB",
+      securityGroups: [loadbalancer_security_group]
     });
 
-
-    var bravo_lb = new elb.LoadBalancer(scope, config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-CLB", {
+    var bravo_lb = new elb.NetworkLoadBalancer(scope, config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-NLB", {
       vpc: happy_vpc,
-      subnetSelection: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
-      internetFacing: false, // Create an internal load balancer
-      crossZone: false,
-      healthCheck: {
-        port: config.loadbalancer_external_connections[0]
-      }
+      vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
+      internetFacing: true, // Create an internet-facing load balancer
+      crossZoneEnabled: false,
+      loadBalancerName: config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-NLB",
+      securityGroups: [loadbalancer_security_group],
     });
+
     config.loadbalancer_external_connections.forEach(function(port: any) {
-      alpha_lb.addListener({
-        externalPort: Number(port),
-        externalProtocol: elb.LoadBalancingProtocol.TCP,
-        internalPort: Number(port),
-        internalProtocol: elb.LoadBalancingProtocol.TCP
-      })
+      alpha_lb.addListener(config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-NLB-LISTENER-PORT-" + String(port), {
+        port: Number(port),
+        protocol: elb.Protocol.TCP,
+      }).addTargets(config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-NLB-TGT-PORT-" + String(port), {
+        port: port,
+        protocol: elb.Protocol.TCP,
+        targets: [asg_alpha]
+      });
 
-      bravo_lb.addListener({
-        externalPort: Number(port),
-        externalProtocol: elb.LoadBalancingProtocol.TCP,
-        internalPort: Number(port),
-        internalProtocol: elb.LoadBalancingProtocol.TCP
-      })
+      bravo_lb.addListener(config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-NLB-LISTENER-PORT-" + String(port), {
+        port: Number(port),
+        protocol: elb.Protocol.TCP,
+      }).addTargets(config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-NLB-TGT-PORT-" + String(port), {
+        port: port,
+        protocol: elb.Protocol.TCP,
+        targets: [asg_bravo]
+      });
     });
 
-    asg_alpha.attachToClassicLB(alpha_lb);
-    asg_bravo.attachToClassicLB(bravo_lb);
   }
 
 
