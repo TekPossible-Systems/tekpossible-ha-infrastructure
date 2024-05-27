@@ -52,18 +52,18 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     ]
   }
   );
-
   const server_a_sg = new ec2.SecurityGroup(scope, config.vpc_name + 'ServerAlpha-SecurityGroup', {  vpc: happy_vpc   });
   config.alpha_server_ports.forEach(function(port: any) {
     server_a_sg.addIngressRule(ec2.Peer.ipv4("172.16.0.0/16"), ec2.Port.tcp(port));
   });
-
+  server_a_sg.addIngressRule(ec2.Peer.ipv4("172.16.0.0/16"), ec2.Port.icmpPing());
   
 
   const server_b_sg = new ec2.SecurityGroup(scope, config.vpc_name + 'ServerBravo-SecurityGroup', {  vpc: happy_vpc   });
   config.bravo_server_ports.forEach(function(port: any) {
     server_b_sg.addIngressRule(ec2.Peer.ipv4("172.16.0.0/16"), ec2.Port.tcp(port));
   });
+  server_b_sg.addIngressRule(ec2.Peer.ipv4("172.16.0.0/16"), ec2.Port.icmpPing());
 
   var instance_type_alpha = '';
   var instance_type_bravo = '';
