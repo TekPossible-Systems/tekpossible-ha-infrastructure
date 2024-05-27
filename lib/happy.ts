@@ -97,8 +97,8 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
   var alpha_user_data = readFileSync("./assets/init_alpha.sh", "utf-8");
   var bravo_user_data = readFileSync("./assets/init_bravo.sh", "utf-8");
-  alpha_user_data = alpha_user_data.replace("REPLACE", config.vpc_name + config.wazuh_server_name);
-  bravo_user_data = bravo_user_data.replace("REPLACE", config.vpc_name + config.wazuh_server_name);
+  alpha_user_data = alpha_user_data.replace("REPLACE", config.wazuh_server_name);
+  bravo_user_data = bravo_user_data.replace("REPLACE", config.wazuh_server_name);
 
   const keypair = ec2.KeyPair.fromKeyPairName(scope, config.keyPair, config.keyPair)
   for (var i = 0; i < config.azs.length; i++) {
