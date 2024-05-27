@@ -26,3 +26,6 @@ sudo systemctl enable --now amazon-ssm-agent
 sudo dnf update -y
 # sudo shutdown -r -h +1
 # Todo: figure out the right grace time
+
+sudo echo "Hostname: $(hostname -f)" > /var/www/html/index.html
+sudo systemctl restart httpd

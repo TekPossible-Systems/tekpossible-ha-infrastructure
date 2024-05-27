@@ -152,7 +152,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     var alpha_lb = new elb.LoadBalancer(scope, config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-CLB", {
       vpc: happy_vpc,
       subnetSelection: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
-      internetFacing: true,
+      internetFacing: false, // Create an internal load balancer,
       crossZone: false,
       healthCheck: {
         port: config.loadbalancer_external_connections[0]
@@ -163,13 +163,12 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     var bravo_lb = new elb.LoadBalancer(scope, config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-CLB", {
       vpc: happy_vpc,
       subnetSelection: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
-      internetFacing: true,
+      internetFacing: false, // Create an internal load balancer
       crossZone: false,
       healthCheck: {
         port: config.loadbalancer_external_connections[0]
       }
     });
-
     config.loadbalancer_external_connections.forEach(function(port: any) {
       alpha_lb.addListener({
         externalPort: Number(port),
