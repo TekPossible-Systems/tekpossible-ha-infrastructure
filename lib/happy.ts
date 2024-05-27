@@ -155,26 +155,30 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       subnetSelection: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
       internetFacing: true,
       crossZone: false,
+      healthCheck: {
+        port: config.loadbalancer_external_connections[0]
+      }
     });
 
-    config.alpha_server_ports.forEach(function(port: any) {
-      alpha_lb.addListener({
-        externalPort: Number(port),
-        externalProtocol: elb.LoadBalancingProtocol.TCP,
-        internalPort: Number(port),
-        internalProtocol: elb.LoadBalancingProtocol.TCP
-      })
-    });
-    asg_alpha.attachToClassicLB(alpha_lb);
 
     var bravo_lb = new elb.LoadBalancer(scope, config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-CLB", {
       vpc: happy_vpc,
       subnetSelection: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
       internetFacing: true,
       crossZone: false,
+      healthCheck: {
+        port: config.loadbalancer_external_connections[0]
+      }
     });
 
-    config.bravo_server_ports.forEach(function(port: any) {
+    config.loadbalancer_external_connections.forEach(function(port: any) {
+      alpha_lb.addListener({
+        externalPort: Number(port),
+        externalProtocol: elb.LoadBalancingProtocol.TCP,
+        internalPort: Number(port),
+        internalProtocol: elb.LoadBalancingProtocol.TCP
+      })
+
       bravo_lb.addListener({
         externalPort: Number(port),
         externalProtocol: elb.LoadBalancingProtocol.TCP,
@@ -182,7 +186,8 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
         internalProtocol: elb.LoadBalancingProtocol.TCP
       })
     });
-    
+
+    asg_alpha.attachToClassicLB(alpha_lb);
     asg_bravo.attachToClassicLB(bravo_lb);
   }
 
