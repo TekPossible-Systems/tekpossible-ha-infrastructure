@@ -1,17 +1,23 @@
 #!/bin/bash
 
-# Wazuh Agent Deploy
+# CDK-INIT Deploy and Misc Setup
 sudo dnf install -y uuid
 sudo hostnamectl set-hostname $(uuid -v 4)-AlphaServer
+pip3 install  https://s3.amazonaws.com/cloudformation-examples/aws-cfn-bootstrap-py3-latest.tar.gz
+mkdir -p /opt/aws/bin
+ln -s /usr/local/bin/cfn-* /opt/aws/bin/
+
+# AWS SSN Agent Deploy
+sudo dnf install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+sudo systemctl enable --now amazon-ssm-agent
+
+
+# Wazuh Agent Deploy
 curl -o wazuh-agent-4.7.4-1.x86_64.rpm https://packages.wazuh.com/4.x/yum/wazuh-agent-4.7.4-1.x86_64.rpm
 sudo WAZUH_MANAGER='REPLACE' rpm -ivh wazuh-agent-4.7.4-1.x86_64.rpm
 sudo systemctl daemon-reload
 sudo systemctl enable wazuh-agent
 sudo systemctl start wazuh-agent
-
-# AWS SSN Agent Deploy
-sudo dnf install -y https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
-sudo systemctl enable --now amazon-ssm-agent
 
 # CodeDeploy Stuff - Maybe we do this later once we have code to deploy
 # cd /home/ec2-user

@@ -6,6 +6,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as imgbuilder from 'aws-cdk-lib/aws-imagebuilder';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
+import * as elb from 'aws-cdk-lib/aws-elasticloadbalancing';
 
 // Read files from the assets folder
 import { readFileSync } from 'fs';
@@ -114,7 +115,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),
       keyPair: keypair,
       securityGroup: server_a_sg,
-      allowAllOutbound: true
+      allowAllOutbound: true,
     });
     
     var asg_bravo = new autoscaling.AutoScalingGroup(scope, config.vpc_name + "ServerB-ASG-AZ" + String(i+1), {
@@ -149,6 +150,40 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
     asg_bravo.addUserData(bravo_user_data);
 
+    var alpha_lb = new elb.LoadBalancer(scope, config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-CLB", {
+      vpc: happy_vpc,
+      subnetSelection: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
+      internetFacing: true,
+      crossZone: false,
+    });
+
+    config.alpha_server_ports.forEach(function(port: any) {
+      alpha_lb.addListener({
+        externalPort: Number(port),
+        externalProtocol: elb.LoadBalancingProtocol.TCP,
+        internalPort: Number(port),
+        internalProtocol: elb.LoadBalancingProtocol.TCP
+      })
+    });
+    asg_alpha.attachToClassicLB(alpha_lb);
+
+    var bravo_lb = new elb.LoadBalancer(scope, config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-CLB", {
+      vpc: happy_vpc,
+      subnetSelection: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
+      internetFacing: true,
+      crossZone: false,
+    });
+
+    config.bravo_server_ports.forEach(function(port: any) {
+      bravo_lb.addListener({
+        externalPort: Number(port),
+        externalProtocol: elb.LoadBalancingProtocol.TCP,
+        internalPort: Number(port),
+        internalProtocol: elb.LoadBalancingProtocol.TCP
+      })
+    });
+    
+    asg_bravo.attachToClassicLB(bravo_lb);
   }
 
 
