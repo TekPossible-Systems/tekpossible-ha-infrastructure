@@ -2,7 +2,7 @@
 
 # Wazuh Agent Deploy
 sudo dnf install httpd -y
-systemctl enable --now httpd
+sudo systemctl enable --now httpd
 sudo dnf install -y uuid
 sudo hostnamectl set-hostname $(uuid -v 4)-BravoServer
 curl -o wazuh-agent-4.7.4-1.x86_64.rpm https://packages.wazuh.com/4.x/yum/wazuh-agent-4.7.4-1.x86_64.rpm
