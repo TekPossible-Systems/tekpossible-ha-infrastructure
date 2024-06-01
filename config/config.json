@@ -9,6 +9,12 @@
         "us-east-2a",
         "us-east-2b"
     ],
+    "ami": { 
+        "us-east-1": "ami-0fe630eb857a6ec83", 
+        "us-east-2": "ami-078cbc4c2d057c244", 
+        "us-west-1": "ami-014b33341e3a1178e", 
+        "us-west-2": "ami-0f7197c592205b389"
+    },
     "min_alpha_server_capacity": 1,
     "max_alpha_server_capacity": 2,
     "max_alpha_server_cpu_pct": 70,
@@ -42,13 +48,7 @@
         10004
     ],
     "loadbalancer_external_connections":[
-        80,
-        443,
-        8000,
-        8001,
-        8002,
-        8003,
-        9090
+        80
     ]
 
 }

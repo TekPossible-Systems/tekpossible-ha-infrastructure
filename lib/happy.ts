@@ -117,7 +117,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       vpc: happy_vpc, 
       instanceType:new ec2.InstanceType(instance_type_alpha),
       role: server_instance_role,
-      machineImage: ec2.MachineImage.genericLinux({ 'us-east-1': 'ami-0fe630eb857a6ec83', 'us-east-2': 'ami-078cbc4c2d057c244', 'us-west-1': 'ami-014b33341e3a1178e', 'us-west-2': 'ami-0f7197c592205b389' }),
+      machineImage: ec2.MachineImage.genericLinux(config.ami),
       minCapacity: config.min_alpha_server_capacity,
       maxCapacity: config.max_alpha_server_capacity,
       healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.minutes(config.alpha_server_warmup_time_minutes) }),
@@ -133,7 +133,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       vpc: happy_vpc, 
       instanceType:new ec2.InstanceType(instance_type_bravo),
       role: server_instance_role,
-      machineImage: ec2.MachineImage.genericLinux({ 'us-east-1': 'ami-0fe630eb857a6ec83', 'us-east-2': 'ami-078cbc4c2d057c244', 'us-west-1': 'ami-014b33341e3a1178e', 'us-west-2': 'ami-0f7197c592205b389' }),
+      machineImage: ec2.MachineImage.genericLinux(config.ami),
       minCapacity: config.min_bravo_server_capacity,
       maxCapacity: config.max_bravo_server_capacity,
       healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.minutes(config.bravo_server_warmup_time_minutes) }),
@@ -160,41 +160,43 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
     asg_bravo.addUserData(bravo_user_data);
 
-    var alpha_lb = new elb.NetworkLoadBalancer(scope, config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-NLB", {
+    var alpha_lb = new elb.NetworkLoadBalancer(scope, config.vpc_name + "ServerA-NLB-AZ" + String(i+1), {
       vpc: happy_vpc,
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
       internetFacing: false, // Create an internal load balancer,
       crossZoneEnabled: false,
-      loadBalancerName: config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-NLB",
+      loadBalancerName: config.vpc_name + "ServerA-NLB-AZ" + String(i+1),
       securityGroups: [loadbalancer_security_group]
     });
 
-    var bravo_lb = new elb.NetworkLoadBalancer(scope, config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-NLB", {
+    var bravo_lb = new elb.NetworkLoadBalancer(scope, config.vpc_name + "ServerB-NLB-AZ" + String(i+1), {
       vpc: happy_vpc,
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
       internetFacing: false, // Create an internal load balancer
       crossZoneEnabled: false,
-      loadBalancerName: config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-NLB",
+      loadBalancerName: config.vpc_name + "ServerB-NLB-AZ" + String(i+1),
       securityGroups: [loadbalancer_security_group],
     });
 
     config.loadbalancer_external_connections.forEach(function(port: any) {
-      alpha_lb.addListener(config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-NLB-LISTENER-PORT-" + String(port), {
+      alpha_lb.addListener(config.vpc_name + "ServerA-NLB-AZ" + String(i+1) + "-LISTENER-PORT-" + String(port), {
         port: Number(port),
         protocol: elb.Protocol.TCP,
-      }).addTargets(config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-NLB-TGT-PORT-" + String(port), {
+      }).addTargets(config.vpc_name + "ServerA-NLB-AZ" + String(i+1) + "-TGT-P" + String(port), {
         port: port,
         protocol: elb.Protocol.TCP,
-        targets: [asg_alpha]
+        targets: [asg_alpha],
+        targetGroupName: config.vpc_name + "ServerA-NLB-AZ" + String(i+1) + "-TGT-P" + String(port)
       });
 
-      bravo_lb.addListener(config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-NLB-LISTENER-PORT-" + String(port), {
+      bravo_lb.addListener(config.vpc_name + "ServerB-NLB-AZ" + String(i+1) + "-LISTENER-PORT-" + String(port), {
         port: Number(port),
         protocol: elb.Protocol.TCP,
-      }).addTargets(config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-NLB-TGT-PORT-" + String(port), {
+      }).addTargets(config.vpc_name + "ServerB-NLB-AZ" + String(i+1) + "-TGT-P" + String(port), {
         port: port,
         protocol: elb.Protocol.TCP,
-        targets: [asg_bravo]
+        targets: [asg_bravo],
+        targetGroupName: config.vpc_name + "ServerB-NLB-AZ" + String(i+1) + "-TGT-P" + String(port)
       });
     });
 
