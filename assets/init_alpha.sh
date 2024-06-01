@@ -29,3 +29,12 @@ sudo dnf update -y
 
 sudo echo "Hostname: $(hostname -f)" > /var/www/html/index.html
 sudo systemctl restart httpd
+
+# STIG Stuff 
+dnf install -y ansible-core wget
+cd /home/ec2-user
+wget https://dl.dod.cyber.mil/wp-content/uploads/stigs/zip/U_RHEL_9_V1R2_STIG_Ansible.zip
+unzip U_RHEL_9_V1R2_STIG_Ansible.zip
+unzip rhel9STIG-ansible.zip
+sudo ansible-galaxy collection install ansible.posix community.general
+sudo bash ./enforce.sh 

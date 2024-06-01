@@ -3,11 +3,9 @@ import { Construct } from 'constructs';
 
 // AWS CDK Imports
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import * as imgbuilder from 'aws-cdk-lib/aws-imagebuilder';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import * as elb_tgt from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
 
 // Read files from the assets folder
 import { readFileSync } from 'fs';
@@ -165,7 +163,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     var alpha_lb = new elb.NetworkLoadBalancer(scope, config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-NLB", {
       vpc: happy_vpc,
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
-      internetFacing: true, // Create an internet-facing load balancer,
+      internetFacing: false, // Create an internal load balancer,
       crossZoneEnabled: false,
       loadBalancerName: config.vpc_name + "ServerA-ASG-AZ" + String(i+1) + "-NLB",
       securityGroups: [loadbalancer_security_group]
@@ -174,7 +172,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     var bravo_lb = new elb.NetworkLoadBalancer(scope, config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-NLB", {
       vpc: happy_vpc,
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
-      internetFacing: true, // Create an internet-facing load balancer
+      internetFacing: false, // Create an internal load balancer
       crossZoneEnabled: false,
       loadBalancerName: config.vpc_name + "ServerB-ASG-AZ" + String(i+1) + "-NLB",
       securityGroups: [loadbalancer_security_group],
