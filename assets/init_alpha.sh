@@ -1,5 +1,16 @@
 #!/bin/bash
 
+# Firewall Configuration
+sudo systemctl enable --now firewalld
+firewall_ports=( PORTS )
+
+for port in $firewall_ports
+do 
+    sudo firewall-cmd --add-port="$port/tcp" --permanent
+done
+
+sudo firewall-cmd --reload
+
 # Wazuh Agent Deploy
 sudo dnf install httpd mod_ssl -y
 sudo systemctl enable --now httpd
