@@ -1,15 +1,8 @@
-# Welcome to your CDK TypeScript project
+# Architecture of HAPPy
 
-This is a blank project for CDK development with TypeScript.
+Essentially it is this: 
+I wanted to try making a highly available system and learn new technologies made by AWS. All work is done in the CDK (TypeScript), or bash scripts made for instance userdata.
+Below is a diagram of the design I have so far, and the services used: 
 
-The `cdk.json` file tells the CDK Toolkit how to execute your app.
 
-## Useful commands
-
-* `npm run build`   compile typescript to js
-* `npm run watch`   watch for changes and compile
-* `npm run test`    perform the jest unit tests
-* `npx cdk deploy`  deploy this stack to your default AWS account/region
-* `npx cdk diff`    compare deployed stack with current state
-* `npx cdk synth`   emits the synthesized CloudFormation template
-# highly-available-program
+![TekPossible HAPPY Architecture](./docs/architecture-happy.png)
