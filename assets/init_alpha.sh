@@ -5,7 +5,7 @@ dnf install -y firewalld
 sudo systemctl enable --now firewalld
 firewall_ports=( PORTS )
 
-for port in $firewall_ports
+for port in ${firewall_ports[@]}
 do 
     sudo firewall-cmd --add-port="$port/tcp" --permanent
 done
