@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Wazuh Agent Deploy
-sudo dnf install httpd -y
+sudo dnf install httpd mod_ssl -y
 sudo systemctl enable --now httpd
 sudo dnf install -y uuid
 sudo hostnamectl set-hostname $(uuid -v 4)-AlphaServer

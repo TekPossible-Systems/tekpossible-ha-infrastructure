@@ -6,7 +6,6 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-
 // Read files from the assets folder
 import { readFileSync } from 'fs';
 
@@ -198,6 +197,18 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
         targets: [asg_bravo],
         targetGroupName: config.vpc_name + "ServerB-NLB-AZ" + String(i+1) + "-TGT-P" + String(port)
       });
+      
+      // Tags are added so that instances can dynamically be added to the codedeploy deployment group
+
+      cdk.Tags.of(asg_alpha).add("codedeploy_group", config.alpha_codedeloy_tag, { 
+        applyToLaunchedInstances: true
+      });
+
+      cdk.Tags.of(asg_bravo).add("codedeploy_group", config.bravo_codedeploy_tag, { 
+        applyToLaunchedInstances: true
+      });
+
+
     });
 
   }
