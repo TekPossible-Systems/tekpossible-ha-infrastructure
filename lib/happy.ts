@@ -12,7 +12,7 @@ import { readFileSync } from 'fs';
 /* There are 3 env types: 
 * 1. Demo - this is where all instance types are t2.micro
 * 2. Small - this is where all instance types are t3.medium
-* 3. Production - this is the real instance size of i4i.metal is used for Server B and c6in.8xlarge for the Server A type.
+* 3. Production - this is the real instance size of p4d.24xlarge is used for Server B and c6in.8xlarge for the Server A type.
 */
 
 function create_happy_vpc(scope: Construct, region_name: string, config: any){
@@ -79,9 +79,9 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
   } else if (config.env_type == 'production'){   
     console.log("Server A Environment type is production! Using c6in.8xlarge instance..."); 
-    console.log("Server B Environment type is production! Using i4i.metal instance...");
+    console.log("Server B Environment type is production! Using p4d.24xlarge instance...");
     instance_type_alpha = 'c6in.8xlarge';
-    instance_type_bravo = 'i4i.metal';
+    instance_type_bravo = 'p4d.24xlarge';
 
   } else {
     console.log("Incorrect env_type defined, so I will use a t2.micro instance for both servers...");
