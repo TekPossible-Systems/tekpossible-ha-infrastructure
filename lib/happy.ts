@@ -105,6 +105,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
   const efs_security_group = new ec2.SecurityGroup(scope, config.vpc_name + "EFS-SHARE-SG", {
     vpc: happy_vpc
   });
+
   efs_security_group.addIngressRule(ec2.Peer.ipv4("172.16.0.0/16"), ec2.Port.NFS);
   var efs_shares: any = [];
 
@@ -115,7 +116,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       fileSystemName: config.vpc_name + "EFS-SHARE" + share.name,
       allowAnonymousAccess: false,
       enableAutomaticBackups: true,
-      oneZone: true,
+      oneZone: false, // For our setup this needs to be false - there are 2 AZs by default and you could theoretically add more
       securityGroup: efs_security_group,
       removalPolicy: efs_removal_policy
     });
@@ -131,6 +132,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     efs_share_user_data += "sudo mkdir " + share.mount + "\n"
     efs_share_user_data += "sudo echo '" + share.fsid  + ":/ " + share.mount + " efs _netdev,noresvport,tls,iam 0 0' >> /etc/fstab\n"
   });
+  
   efs_share_user_data += "sudo mount -a\n\n"
 
   var autoscaling_groups_alpha = [];
@@ -152,6 +154,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
   config.loadbalancer_external_connections.forEach(function(port: any) {
     loadbalancer_security_group.addIngressRule(ec2.Peer.ipv4("0.0.0.0/0"), ec2.Port.tcp(port));
+
   });
   
 
@@ -254,13 +257,9 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
         applyToLaunchedInstances: true
       });
 
-
     });
 
   }
-
-
-
 
 }
 
