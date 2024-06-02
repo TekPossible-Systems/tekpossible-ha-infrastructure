@@ -110,10 +110,10 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
   var efs_shares: any = [];
 
   config.efs_shares.forEach(function(share: any){
-    var happy_efs_share = new efs.FileSystem(scope, config.vpc_name + "EFS-SHARE" + share.name, {
+    var happy_efs_share = new efs.FileSystem(scope, config.vpc_name + "EFS-SHARE-" + share.name, {
       vpc: happy_vpc,
       encrypted: true,
-      fileSystemName: config.vpc_name + "EFS-SHARE" + share.name,
+      fileSystemName: config.vpc_name + "EFS-SHARE-" + share.name,
       allowAnonymousAccess: false,
       enableAutomaticBackups: true,
       oneZone: false, // For our setup this needs to be false - there are 2 AZs by default and you could theoretically add more
@@ -132,7 +132,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     efs_share_user_data += "sudo mkdir " + share.mount + "\n"
     efs_share_user_data += "sudo echo '" + share.fsid  + ":/ " + share.mount + " efs _netdev,noresvport,tls,iam 0 0' >> /etc/fstab\n"
   });
-  
+
   efs_share_user_data += "sudo mount -a\n\n"
 
   var autoscaling_groups_alpha = [];
