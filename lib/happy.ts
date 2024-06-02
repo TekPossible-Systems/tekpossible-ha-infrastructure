@@ -6,6 +6,7 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as efs from 'aws-cdk-lib/aws-efs';
 // Read files from the assets folder
 import { readFileSync } from 'fs';
 
@@ -64,39 +65,81 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
   var instance_type_alpha = '';
   var instance_type_bravo = '';
+  var efs_removal_policy = cdk.RemovalPolicy.DESTROY;
   if (config.env_type == "demo"){
     console.log("Server A Environment type is demo! Using t2.micro instance...");
     console.log("Server B Environment type is demo! Using t2.micro instance...");
+    console.log("EFS environment is demo! Removal policy is set to DESTROY...");
     instance_type_alpha = 't2.micro';
     instance_type_bravo = 't2.micro';
-
+    efs_removal_policy = cdk.RemovalPolicy.DESTROY;
   }
   else if (config.env_type == "small"){
     console.log("Server A Environment type is small! Using t3.medium instance...");
     console.log("Server B Environment type is small! Using t3.medium instance...");
+    console.log("EFS environment is small! Removal policy is set to RETAIN...");
     instance_type_alpha = 't3.medium';
     instance_type_bravo = 't3.medium';
+    efs_removal_policy = cdk.RemovalPolicy.RETAIN;
 
   } else if (config.env_type == 'production'){   
     console.log("Server A Environment type is production! Using c6in.8xlarge instance..."); 
     console.log("Server B Environment type is production! Using p4d.24xlarge instance...");
+    console.log("EFS environment is production! Removal policy is set to RETAIN...");
     instance_type_alpha = 'c6in.8xlarge';
     instance_type_bravo = 'p4d.24xlarge';
+    efs_removal_policy = cdk.RemovalPolicy.RETAIN;
+
 
   } else {
     console.log("Incorrect env_type defined, so I will use a t2.micro instance for both servers...");
+    console.log("EFS environment is not defined! Removal policy is set to DESTROY...");
     instance_type_alpha = 't2.micro';
     instance_type_bravo = 't2.micro';
+    efs_removal_policy = cdk.RemovalPolicy.DESTROY;
 
   }
+
+  // Create EFS (AWS NFS) Share
+  const efs_security_group = new ec2.SecurityGroup(scope, config.vpc_name + "EFS-SHARE-SG", {
+    vpc: happy_vpc
+  });
+  efs_security_group.addIngressRule(ec2.Peer.ipv4("172.16.0.0/16"), ec2.Port.NFS);
+  var efs_shares: any = [];
+
+  config.efs_shares.forEach(function(share: any){
+    var happy_efs_share = new efs.FileSystem(scope, config.vpc_name + "EFS-SHARE" + share.name, {
+      vpc: happy_vpc,
+      encrypted: true,
+      fileSystemName: config.vpc_name + "EFS-SHARE" + share.name,
+      allowAnonymousAccess: false,
+      enableAutomaticBackups: true,
+      oneZone: true,
+      securityGroup: efs_security_group,
+      removalPolicy: efs_removal_policy
+    });
+
+    happy_efs_share.grantRootAccess(server_instance_role);   
+    efs_shares.push({"fsid" :happy_efs_share.fileSystemId, "mount": "/" + share.name });
+
+  });
+
+  // Modify user data to mount the nfs shares
+  var efs_share_user_data = '#!/bin/bash\n\n sudo dnf install -y https://cdn.amazonlinux.com/al2023/core/guids/9cf1057036ef7d615de550a658447fad88617805da0cfc9b854ba0fb8a668466/x86_64/../../../../blobstore/9866146da4d009f3e37eb83b7dd6361da7b87078e9b8be60a6e9fc9695d10533/amazon-efs-utils-1.35.0-1.amzn2023.noarch.rpm\n';
+  efs_shares.forEach(function(share: any){
+    efs_share_user_data += "sudo mkdir " + share.mount + "\n"
+    efs_share_user_data += "sudo echo '" + share.fsid  + ":/ " + share.mount + " efs _netdev,noresvport,tls,iam 0 0' >> /etc/fstab\n"
+  });
+  efs_share_user_data += "sudo mount -a"
+
   var autoscaling_groups_alpha = [];
   var autoscaling_groups_bravo = [];
 
   var alpha_user_data = readFileSync("./assets/init_alpha.sh", "utf-8");
   var bravo_user_data = readFileSync("./assets/init_bravo.sh", "utf-8");
-  alpha_user_data = alpha_user_data.replace("REPLACE", config.wazuh_server_name);
+  alpha_user_data = efs_share_user_data + alpha_user_data.replace("REPLACE", config.wazuh_server_name);
   alpha_user_data = alpha_user_data.replace("PORTS", config.alpha_server_ports.join(" "));
-  bravo_user_data = bravo_user_data.replace("REPLACE", config.wazuh_server_name);
+  bravo_user_data = efs_share_user_data + bravo_user_data.replace("REPLACE", config.wazuh_server_name);
   bravo_user_data = bravo_user_data.replace("PORTS", config.bravo_server_ports.join(" "));
 
   const keypair = ec2.KeyPair.fromKeyPairName(scope, config.keyPair, config.keyPair)

@@ -5,6 +5,15 @@
     "keyPair": "tekp-keypair",
     "env_type": "demo",
     "wazuh_server_name": "wazuh.tekpossible.com",
+    "efs_shares":
+    [
+        {
+            "name":"application_mount1"
+        },
+        {
+            "name":"application_mount2"
+        }  
+    ],
     "azs": [
         "us-east-2a",
         "us-east-2b"
