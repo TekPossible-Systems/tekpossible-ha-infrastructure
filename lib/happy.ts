@@ -200,7 +200,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       
       // Tags are added so that instances can dynamically be added to the codedeploy deployment group
 
-      cdk.Tags.of(asg_alpha).add("codedeploy_group", config.alpha_codedeloy_tag, { 
+      cdk.Tags.of(asg_alpha).add("codedeploy_group", config.alpha_codedeploy_tag, { 
         applyToLaunchedInstances: true
       });
 
