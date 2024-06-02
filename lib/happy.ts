@@ -35,6 +35,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     ipAddresses: ec2.IpAddresses.cidr('172.16.0.0/16'),
     availabilityZones: config.azs,
     enableDnsSupport: true,
+    enableDnsHostnames: true, // Needed for some EFS DNS stuff
     createInternetGateway: true,
     subnetConfiguration: [
       {
@@ -130,7 +131,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     efs_share_user_data += "sudo mkdir " + share.mount + "\n"
     efs_share_user_data += "sudo echo '" + share.fsid  + ":/ " + share.mount + " efs _netdev,noresvport,tls,iam 0 0' >> /etc/fstab\n"
   });
-  efs_share_user_data += "sudo mount -a"
+  efs_share_user_data += "sudo mount -a\n\n"
 
   var autoscaling_groups_alpha = [];
   var autoscaling_groups_bravo = [];
