@@ -267,7 +267,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 export class Happy extends cdk.Stack {
   constructor(scope: Construct, id: string, config: any, props?: cdk.StackProps) {
     super(scope, id, props);
-    create_happy_vpc(this, "us-east-2", config);
+    create_happy_vpc(this, config.region, config);
   }
 }
 
