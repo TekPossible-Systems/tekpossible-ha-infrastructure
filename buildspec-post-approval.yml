@@ -1,3 +1,17 @@
 ---
 
-# NOTHING TO SEE JUST YET
+version: 0.2
+phases:
+  install:
+    commands:
+      - pip install -q ansible-core ansible-lint report2junit
+      - yum install -y nodejs ruby
+      - gem install cfn-nag
+      - npm install sarif-junit@latest typescript cdk aws-cdk aws-cdk-lib
+      - npm install 
+      - npm update
+      - npm install --save-dev @types/node
+      - npx cdk bootstrap
+  build:
+    commands:
+      - npx cdk deploy --all --no-notices --require-approval never
