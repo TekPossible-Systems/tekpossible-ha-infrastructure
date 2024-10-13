@@ -1,4 +1,6 @@
 {
+    "stack_base_name": "TekPossible-Stratagem",
+    "stack_name": "TekPossible-Stratagem-Infrastructure",
     "aws_account": "383009235696",
     "region": "us-east-2",
     "vpc_name": "HappyVPC", 

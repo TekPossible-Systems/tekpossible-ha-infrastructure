@@ -6,4 +6,4 @@ import stack_config from '../config/config.json';
 
 const app = new cdk.App();
 
-new Happy(app, 'Happy-Stack', stack_config, {});
+new Happy(app, 'TekPossible-Stratagem-Infrastructure', stack_config, {});
