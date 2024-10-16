@@ -3,33 +3,32 @@
     "stack_name": "TekPossible-Stratagem-Infrastructure",
     "aws_account": "383009235696",
     "region": "us-east-2",
-    "vpc_name": "HappyVPC", 
+    "vpc_name": "HappyVPC",
     "keyPair": "tekp-keypair",
     "env_type": "demo",
     "wazuh_server_name": "wazuh.tekpossible.com",
-    "efs_shares":
-    [
+    "efs_shares": [
         {
-            "name":"application_mount1"
+            "name": "application_mount1"
         },
         {
-            "name":"application_mount2"
-        }  
+            "name": "application_mount2"
+        }
     ],
     "azs": [
         "us-east-2a",
         "us-east-2b"
     ],
-    "ami": { 
-        "us-east-1": "ami-0fe630eb857a6ec83", 
-        "us-east-2": "ami-078cbc4c2d057c244", 
-        "us-west-1": "ami-014b33341e3a1178e", 
+    "ami": {
+        "us-east-1": "ami-0fe630eb857a6ec83",
+        "us-east-2": "ami-078cbc4c2d057c244",
+        "us-west-1": "ami-014b33341e3a1178e",
         "us-west-2": "ami-0f7197c592205b389"
     },
     "min_alpha_server_capacity": 2,
     "max_alpha_server_capacity": 4,
     "max_alpha_server_cpu_pct": 70,
-    "alpha_server_warmup_time_minutes":  30,
+    "alpha_server_warmup_time_minutes": 30,
     "alpha_codedeploy_tag": "codedeploy-server-alpha-383009235696",
     "alpha_server_ports": [
         22,
@@ -46,7 +45,7 @@
     "min_bravo_server_capacity": 2,
     "max_bravo_server_capacity": 6,
     "max_bravo_server_cpu_pct": 70,
-    "bravo_server_warmup_time_minutes" : 30,
+    "bravo_server_warmup_time_minutes": 30,
     "bravo_codedeploy_tag": "codedeploy-server-bravo-383009235696",
     "bravo_server_ports": [
         22,
@@ -60,9 +59,8 @@
         10003,
         10004
     ],
-    "loadbalancer_external_connections":[
+    "loadbalancer_external_connections": [
         80,
         443
     ]
-
 }
