@@ -5,9 +5,12 @@ phases:
       - pip install -q ansible-core ansible-lint report2junit
       - yum install -y nodejs ruby
       - gem install cfn-nag
+      - rm -rf ./node_modules
+      - rm -rf ./package-lock.json
       - npm install sarif-junit@latest typescript cdk aws-cdk aws-cdk-lib
+      - npm install 
       - npm update
-      - npx cdk ls
+      - npm install --save-dev @types/node
       - npx cdk bootstrap
   build:
     commands:
