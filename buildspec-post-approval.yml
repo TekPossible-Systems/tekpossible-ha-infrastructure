@@ -6,9 +6,8 @@ phases:
       - yum install -y nodejs ruby
       - gem install cfn-nag
       - npm install sarif-junit@latest typescript cdk aws-cdk aws-cdk-lib
-      - npm install 
       - npm update
-      - npm install --save-dev @types/node
+      - npx cdk ls
       - npx cdk bootstrap
   build:
     commands:
