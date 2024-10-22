@@ -24,7 +24,8 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     roleName: 'Happy-Server-IAM-Role',
     assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
   });
-  server_instance_role.addManagedPolicy(iam.ManagedPolicy.fromManagedPolicyArn(scope,"Happy-MMROLE_SSM", "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"));
+  server_instance_role.addManagedPolicy(iam.ManagedPolicy.fromManagedPolicyArn(scope,"Happy-MMROLE_SSM1", "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"));
+  server_instance_role.addManagedPolicy(iam.ManagedPolicy.fromManagedPolicyArn(scope,"Happy-MMROLE_SSM2", "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"));
   server_instance_role.addManagedPolicy(iam.ManagedPolicy.fromManagedPolicyArn(scope,"Happy-MMROLE_LOGS", "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"));
   server_instance_role.addManagedPolicy(iam.ManagedPolicy.fromManagedPolicyArn(scope,"Happy-MMROLE_CODE", "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"));
 
