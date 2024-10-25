@@ -228,21 +228,21 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       alpha_lb.addListener(config.vpc_name + "ServerA-NLB-AZ" + String(i+1) + "-LISTENER-PORT-" + String(port), {
         port: Number(port),
         protocol: elb.Protocol.TCP,
-      }).addTargets(config.vpc_name + "ServerA-NLB-AZ" + String(i+1) + "-TGT-P" + String(port), {
+      }).addTargets(config.vpc_name + "ServerA-NLB-AZ" + String(i+1) + "-P" + String(port), {
         port: port,
         protocol: elb.Protocol.TCP,
         targets: [asg_alpha],
-        targetGroupName: config.vpc_name + "ServerA-NLB-AZ" + String(i+1) + "-TGT-P" + String(port)
+        targetGroupName: config.vpc_name + "ServerA-NLB-AZ" + String(i+1) + "-P" + String(port)
       });
 
       bravo_lb.addListener(config.vpc_name + "ServerB-NLB-AZ" + String(i+1) + "-LISTENER-PORT-" + String(port), {
         port: Number(port),
         protocol: elb.Protocol.TCP,
-      }).addTargets(config.vpc_name + "ServerB-NLB-AZ" + String(i+1) + "-TGT-P" + String(port), {
+      }).addTargets(config.vpc_name + "ServerB-NLB-AZ" + String(i+1) + "-P" + String(port), {
         port: port,
         protocol: elb.Protocol.TCP,
         targets: [asg_bravo],
-        targetGroupName: config.vpc_name + "ServerB-NLB-AZ" + String(i+1) + "-TGT-P" + String(port)
+        targetGroupName: config.vpc_name + "ServerB-NLB-AZ" + String(i+1) + "-P" + String(port)
       });
       
       // Tags are added so that instances can dynamically be added to the codedeploy deployment group
