@@ -33,4 +33,6 @@ sudo dnf update -y
 sudo echo "Hostname: $(hostname -f)" > /var/www/html/index.html
 sudo systemctl restart httpd
 
-# TODO: ADD SOFTWARE INSTALL HOOKS HERE
+# TODO: SOFTWARE INSTALL HOOKS
+cd /root/software-preinstall/
+bash ./install.sh
