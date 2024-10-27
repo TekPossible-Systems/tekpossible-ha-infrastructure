@@ -17,7 +17,6 @@ sudo rpm --import /etc/pki/rpm-gpg/amazon-gpg-key
 # AWS SSM Agent Deploy
 sudo rpm -ivh  -y --nodigest --nosignature https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
 sudo systemctl enable --now amazon-ssm-agent
-sudo systemctl restart amazon-ssm-agent
 
 
 # CodeDeploy Stuff
@@ -37,3 +36,5 @@ sudo systemctl restart httpd
 # TODO: SOFTWARE INSTALL HOOKS
 cd /root/software-preinstall/
 bash ./install.sh
+sleep 30
+sudo systemctl restart amazon-ssm-agent
