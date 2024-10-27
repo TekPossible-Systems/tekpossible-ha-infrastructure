@@ -21,7 +21,7 @@
     ],
     "ami": {
         "us-east-1": "ami-0fe630eb857a6ec83",
-        "us-east-2": "ami-06288091429f42f0c",
+        "us-east-2": "ami-00dd160b3a5b7f93c",
         "us-west-1": "ami-014b33341e3a1178e",
         "us-west-2": "ami-0f7197c592205b389"
     },
