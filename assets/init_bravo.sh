@@ -15,9 +15,8 @@ sudo hostnamectl set-hostname $(uuid -v 4)-BravoServer
 sudo rpm --import /etc/pki/rpm-gpg/amazon-gpg-key
 
 # AWS SSM Agent Deploy
-sudo rpm -ivh  -y --nodigest --nosignature https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
+sudo rpm -ivh --nodigest --nosignature https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/linux_amd64/amazon-ssm-agent.rpm
 sudo systemctl enable --now amazon-ssm-agent
-
 
 # CodeDeploy Stuff
 cd /home/ec2-user
