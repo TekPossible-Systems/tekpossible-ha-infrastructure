@@ -127,7 +127,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
   });
 
   // Modify user data to mount the nfs shares
-  var efs_share_user_data = '#!/bin/bash\n\n sudo dnf install -y --nogpgcheck https://cdn.amazonlinux.com/al2023/core/guids/9cf1057036ef7d615de550a658447fad88617805da0cfc9b854ba0fb8a668466/x86_64/../../../../blobstore/9866146da4d009f3e37eb83b7dd6361da7b87078e9b8be60a6e9fc9695d10533/amazon-efs-utils-1.35.0-1.amzn2023.noarch.rpm\n';
+  var efs_share_user_data = 'sudo dnf install -y --nogpgcheck https://cdn.amazonlinux.com/al2023/core/guids/9cf1057036ef7d615de550a658447fad88617805da0cfc9b854ba0fb8a668466/x86_64/../../../../blobstore/9866146da4d009f3e37eb83b7dd6361da7b87078e9b8be60a6e9fc9695d10533/amazon-efs-utils-1.35.0-1.amzn2023.noarch.rpm\n';
   efs_shares.forEach(function(share: any){
     efs_share_user_data += "sudo mkdir " + share.mount + "\n"
     efs_share_user_data += "sudo echo '" + share.fsid  + ":/ " + share.mount + " efs _netdev,noresvport,tls,iam 0 0' >> /etc/fstab\n"
@@ -141,9 +141,9 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
   var alpha_user_data = readFileSync("./assets/init_alpha.sh", "utf-8");
   var bravo_user_data = readFileSync("./assets/init_bravo.sh", "utf-8");
   alpha_user_data = alpha_user_data.replace("PORTS", config.alpha_server_ports.join(" "));
-  alpha_user_data = alpha_user_data + "\n" + efs_share_user_data;
+  // alpha_user_data = alpha_user_data + "\n" + efs_share_user_data;
   bravo_user_data = bravo_user_data.replace("PORTS", config.bravo_server_ports.join(" "));
-  bravo_user_data = bravo_user_data + "\n" +  efs_share_user_data;
+ //  bravo_user_data = bravo_user_data + "\n" +  efs_share_user_data;
 
   const keypair = ec2.KeyPair.fromKeyPairName(scope, config.keyPair, config.keyPair)
 
