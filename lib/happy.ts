@@ -141,9 +141,9 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
   var alpha_user_data = readFileSync("./assets/init_alpha.sh", "utf-8");
   var bravo_user_data = readFileSync("./assets/init_bravo.sh", "utf-8");
   alpha_user_data = alpha_user_data.replace("PORTS", config.alpha_server_ports.join(" "));
-  // alpha_user_data = alpha_user_data + "\n" + efs_share_user_data;
+  alpha_user_data = alpha_user_data + "\n" + efs_share_user_data;
   bravo_user_data = bravo_user_data.replace("PORTS", config.bravo_server_ports.join(" "));
- //  bravo_user_data = bravo_user_data + "\n" +  efs_share_user_data;
+  bravo_user_data = bravo_user_data + "\n" +  efs_share_user_data;
 
   const keypair = ec2.KeyPair.fromKeyPairName(scope, config.keyPair, config.keyPair)
 
