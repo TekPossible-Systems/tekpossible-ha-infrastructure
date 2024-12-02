@@ -11,8 +11,8 @@ import * as efs from 'aws-cdk-lib/aws-efs';
 import { readFileSync } from 'fs';
 
 /* There are 3 env types: 
-* 1. Demo - this is where all instance types are t2.micro
-* 2. Small - this is where all instance types are t3.medium
+* 1. Demo - this is where all instance types are m4.large
+* 2. Small - this is where all instance types are m7i.4xlarge
 * 3. Production - this is the real instance size of p4d.24xlarge is used for Server B and c6in.8xlarge for the Server A type.
 */
 
@@ -68,19 +68,19 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
   var instance_type_bravo = '';
   var efs_removal_policy = cdk.RemovalPolicy.DESTROY;
   if (config.env_type == "demo"){
-    console.log("Server A Environment type is demo! Using t2.micro instance...");
-    console.log("Server B Environment type is demo! Using t2.micro instance...");
+    console.log("Server A Environment type is demo! Using m4.large instance...");
+    console.log("Server B Environment type is demo! Using m4.large instance...");
     console.log("EFS environment is demo! Removal policy is set to DESTROY...");
-    instance_type_alpha = 't2.micro';
-    instance_type_bravo = 't2.micro';
+    instance_type_alpha = 'm4.large';
+    instance_type_bravo = 'm4.large';
     efs_removal_policy = cdk.RemovalPolicy.DESTROY;
   }
   else if (config.env_type == "small"){
-    console.log("Server A Environment type is small! Using t3.medium instance...");
-    console.log("Server B Environment type is small! Using t3.medium instance...");
+    console.log("Server A Environment type is small! Using m7i.4xlarge instance...");
+    console.log("Server B Environment type is small! Using m7i.4xlarge instance...");
     console.log("EFS environment is small! Removal policy is set to RETAIN...");
-    instance_type_alpha = 't3.medium';
-    instance_type_bravo = 't3.medium';
+    instance_type_alpha = 'm7i.4xlarge';
+    instance_type_bravo = 'm7i.4xlarge';
     efs_removal_policy = cdk.RemovalPolicy.RETAIN;
 
   } else if (config.env_type == 'production'){   
@@ -93,10 +93,10 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
 
   } else {
-    console.log("Incorrect env_type defined, so I will use a t2.micro instance for both servers...");
+    console.log("Incorrect env_type defined, so I will use a m4.large instance for both servers...");
     console.log("EFS environment is not defined! Removal policy is set to DESTROY...");
-    instance_type_alpha = 't2.micro';
-    instance_type_bravo = 't2.micro';
+    instance_type_alpha = 'm4.large';
+    instance_type_bravo = 'm4.large';
     efs_removal_policy = cdk.RemovalPolicy.DESTROY;
 
   }
