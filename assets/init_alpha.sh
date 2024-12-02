@@ -1,5 +1,3 @@
-#!/bin/bash
-
 # Firewall Configuration
 dnf install -y firewalld
 sudo systemctl enable --now firewalld
