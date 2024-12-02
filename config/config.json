@@ -9,10 +9,10 @@
     "wazuh_server_name": "wazuh.tekpossible.com",
     "efs_shares": [
         {
-            "name": "application_mount1"
+            "name": "software"
         },
         {
-            "name": "application_mount2"
+            "name": "infrastructure"
         }
     ],
     "azs": [
