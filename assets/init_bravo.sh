@@ -1,6 +1,6 @@
 # EFS FIPS Configuration
 cd /staging/*ami*/ansible/
-ansible -m lineinfile -a "path=/etc/amazon/efs/efs-utils.conf regex=^.*fips_mode_enabled.*$ line=fips_mode_enabled = true" -i inventory/localsetup/ -c local all -b
+ansible -m lineinfile -a "path=/etc/amazon/efs/efs-utils.conf regex=^.*fips_mode_enabled.*$ line='fips_mode_enabled = true'" -i inventory/localsetup/ -c local all -b
 mount -av
 
 # Firewall Configuration
