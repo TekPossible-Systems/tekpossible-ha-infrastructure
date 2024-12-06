@@ -17,7 +17,7 @@ phases:
       - echo "Checking CDK code for security recommendations..."
       - cfn_nag_scan --input-path ./cdk.out/*template.json -o json > ./cfn_nag_results.json
       - report2junit ./cfn_nag_results.json --ignore-failures
-      - ./kics scan -p ./  --ignore-on-exit all --report-formats junit --no-progress -o ./
+      - ./kics scan -p ./cdk.out  --ignore-on-exit all --report-formats junit --no-progress -o ./
       - echo 'Linting and SAST Data Collected!'
 
 reports:
