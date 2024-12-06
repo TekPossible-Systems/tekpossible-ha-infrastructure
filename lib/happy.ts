@@ -7,6 +7,9 @@ import * as iam from 'aws-cdk-lib/aws-iam';
 import * as autoscaling from 'aws-cdk-lib/aws-autoscaling';
 import * as elb from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as efs from 'aws-cdk-lib/aws-efs';
+import * as s3 from 'aws-cdk-lib/aws-s3';
+import * as logs from 'aws-cdk-lib/aws-logs';
+import * as guardduty from 'aws-cdk-lib/aws-guardduty';
 // Read files from the assets folder
 import { readFileSync } from 'fs';
 
@@ -17,7 +20,18 @@ import { readFileSync } from 'fs';
 */
 
 function create_happy_vpc(scope: Construct, region_name: string, config: any){
+  // Cloudwatch how long do you want to keep the logs?\
+  const __CLOUDWATCH_LOG_RETENTION_DAYS = logs.RetentionDays.TWO_MONTHS;
 
+  // Create s3 bucket for logging of ELB/VPC events
+  const logging_s3_bucket = new s3.Bucket(scope, config.vpc_name + "logging-bucket", {
+    bucketName: config.vpc_name + "logging-bucket",
+    versioned: true,
+    removalPolicy: cdk.RemovalPolicy.DESTROY,
+    autoDeleteObjects: true
+  });
+
+  // Require IMDSv2 for all instances
   const launchTemplateRequireImdsv2Aspect = new ec2.LaunchTemplateRequireImdsv2Aspect({ suppressWarnings: false  });
 
   const server_instance_role = new iam.Role(scope, "Happy-Server-IAM-Role", {
@@ -27,8 +41,18 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
   server_instance_role.addManagedPolicy(iam.ManagedPolicy.fromManagedPolicyArn(scope,"Happy-MMROLE_SSM", "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"));
   server_instance_role.addManagedPolicy(iam.ManagedPolicy.fromManagedPolicyArn(scope,"Happy-MMROLE_LOGS", "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"));
   server_instance_role.addManagedPolicy(iam.ManagedPolicy.fromManagedPolicyArn(scope,"Happy-MMROLE_CODE", "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"));
+    
+  const guardduty_role = new iam.Role(scope, config.vpc_name  + "GuardDutyRole", {
+    roleName:  config.vpc_name  + "GuardDutyRole",
+    assumedBy: new iam.CompositePrincipal(
+      new iam.ServicePrincipal("guardduty.amazonaws.com"),
+      new iam.ServicePrincipal("s3.amazonaws.com"),
+      new iam.ServicePrincipal("ec2.amazonaws.com")
+    )
+  });
 
-
+  guardduty_role.addManagedPolicy(iam.ManagedPolicy.fromManagedPolicyArn(scope, config.vpc_name + "GuardDutyMMRole", "arn:aws:iam::aws:policy/AdministratorAccess"));
+  
   // First things first, we need a VPC
   // This will create 1 public subnets and 1 private subnets per availability zone(s) specified in the config.json file
   const happy_vpc = new ec2.Vpc( scope,  config.vpc_name, {
@@ -50,8 +74,24 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS
     }
     ]
-  }
-  );
+  });
+
+  happy_vpc.addFlowLog(config.vpc_name + "FlowLogS3", {
+    destination: ec2.FlowLogDestination.toS3(logging_s3_bucket),
+    trafficType: ec2.FlowLogTrafficType.REJECT
+  });
+
+  // Create CloudWatch Log Group for VPC Traffic
+  const cw_log_group_flowlog = new logs.LogGroup(scope, config.vpc_name + "FlowLog", {
+    logGroupName: config.stack_base_name + "FlowLog",
+    retention: __CLOUDWATCH_LOG_RETENTION_DAYS
+  });
+
+  happy_vpc.addFlowLog(config.vpc_name + "FlowLog", {
+    destination: ec2.FlowLogDestination.toCloudWatchLogs(cw_log_group_flowlog),
+    trafficType: ec2.FlowLogTrafficType.REJECT
+  });
+
   const server_a_sg = new ec2.SecurityGroup(scope, config.vpc_name + 'ServerAlpha-SecurityGroup', {  vpc: happy_vpc   });
   config.alpha_server_ports.forEach(function(port: any) {
     server_a_sg.addIngressRule(ec2.Peer.ipv4("172.16.0.0/16"), ec2.Port.tcp(port));
@@ -217,6 +257,8 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       securityGroups: [loadbalancer_security_group]
     });
 
+    alpha_lb.logAccessLogs(logging_s3_bucket);
+
     var bravo_lb = new elb.NetworkLoadBalancer(scope, config.vpc_name + "ServerB-NLB-AZ" + String(i+1), {
       vpc: happy_vpc,
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
@@ -225,6 +267,8 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       loadBalancerName: config.vpc_name + "ServerB-NLB-AZ" + String(i+1),
       securityGroups: [loadbalancer_security_group],
     });
+
+    bravo_lb.logAccessLogs(logging_s3_bucket);
 
     config.loadbalancer_external_connections.forEach(function(port: any) {
       alpha_lb.addListener(config.vpc_name + "ServerA-NLB-AZ" + String(i+1) + "-LISTENER-PORT-" + String(port), {
@@ -260,6 +304,22 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     });
 
   }
+
+  // Create GuardDuty Configuration
+  const guardduty_detector = new guardduty.CfnDetector(scope, config.vpc_name + "GuardDutyDetector", {
+    enable: true,
+    dataSources: {
+      s3Logs: {
+        enable: true
+      },
+      malwareProtection: {
+        scanEc2InstanceWithFindings: {
+          ebsVolumes: true
+        }
+      }
+    },
+    findingPublishingFrequency: "FIFTEEN_MINUTES"
+  });
 
 }
 
