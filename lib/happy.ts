@@ -259,7 +259,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       ]
     });
 
-    var bravo_launch_template = new ec2.LaunchTemplate(scope, config.vpc_name + "AlphaLaunchTemplate", {
+    var bravo_launch_template = new ec2.LaunchTemplate(scope, config.vpc_name + "BravoLaunchTemplate", {
       machineImage: ec2.MachineImage.genericLinux(config.ami, {}),
       instanceType: new ec2.InstanceType(instance_type_bravo),
       detailedMonitoring: true,
@@ -327,8 +327,6 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       securityGroups: [loadbalancer_security_group]
     });
 
-    alpha_lb.logAccessLogs(logging_s3_bucket);
-
     var bravo_lb = new elb.NetworkLoadBalancer(scope, config.vpc_name + "ServerB-NLB-AZ" + String(i+1), {
       vpc: happy_vpc,
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PUBLIC }),
@@ -337,8 +335,6 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       loadBalancerName: config.vpc_name + "ServerB-NLB-AZ" + String(i+1),
       securityGroups: [loadbalancer_security_group],
     });
-
-    bravo_lb.logAccessLogs(logging_s3_bucket);
 
     config.loadbalancer_external_connections.forEach(function(port: any) {
       alpha_lb.addListener(config.vpc_name + "ServerA-NLB-AZ" + String(i+1) + "-LISTENER-PORT-" + String(port), {
