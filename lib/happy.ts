@@ -107,38 +107,64 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
   var instance_type_alpha = '';
   var instance_type_bravo = '';
+  var ebs_disk_size = 0;
+  var ebs_device_options;
   var efs_removal_policy = cdk.RemovalPolicy.DESTROY;
   if (config.env_type == "demo"){
     console.log("Server A Environment type is demo! Using m4.large instance...");
     console.log("Server B Environment type is demo! Using m4.large instance...");
     console.log("EFS environment is demo! Removal policy is set to DESTROY...");
+    console.log("Disk size set to 10GB!")
     instance_type_alpha = 'm4.large';
     instance_type_bravo = 'm4.large';
+    ebs_disk_size = 10; // 10 GB
     efs_removal_policy = cdk.RemovalPolicy.DESTROY;
+    ebs_device_options = {
+      encrypted: true,
+      volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD_GP3
+    };
+
   }
   else if (config.env_type == "small"){
     console.log("Server A Environment type is small! Using m7i.4xlarge instance...");
     console.log("Server B Environment type is small! Using m7i.4xlarge instance...");
     console.log("EFS environment is small! Removal policy is set to RETAIN...");
+    console.log("Disk size set to 128GB!")
     instance_type_alpha = 'm7i.4xlarge';
     instance_type_bravo = 'm7i.4xlarge';
+    ebs_disk_size = 128; // 128 GB
     efs_removal_policy = cdk.RemovalPolicy.RETAIN;
+    ebs_device_options = {
+      encrypted: true,
+      volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD_GP3
+    };
 
   } else if (config.env_type == 'production'){   
     console.log("Server A Environment type is production! Using c6in.8xlarge instance..."); 
     console.log("Server B Environment type is production! Using p4d.24xlarge instance...");
     console.log("EFS environment is production! Removal policy is set to RETAIN...");
+    console.log("Disk size set to 512GB!")
     instance_type_alpha = 'c6in.8xlarge';
     instance_type_bravo = 'p4d.24xlarge';
+    ebs_disk_size = 512; // 512 GB
     efs_removal_policy = cdk.RemovalPolicy.RETAIN;
-
+    ebs_device_options = {
+      encrypted: true,
+      volumeType: ec2.EbsDeviceVolumeType.PROVISIONED_IOPS_SSD_IO2
+    };
 
   } else {
     console.log("Incorrect env_type defined, so I will use a m4.large instance for both servers...");
+    console.log("Disk size set to 10GB!")
     console.log("EFS environment is not defined! Removal policy is set to DESTROY...");
     instance_type_alpha = 'm4.large';
     instance_type_bravo = 'm4.large';
+    ebs_disk_size = 10; // 10 GB
     efs_removal_policy = cdk.RemovalPolicy.DESTROY;
+    ebs_device_options = {
+      encrypted: true,
+      volumeType: ec2.EbsDeviceVolumeType.GENERAL_PURPOSE_SSD_GP3
+    };
 
   }
 
@@ -209,37 +235,63 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     After doing that, the majority of the configurations will be the same. 
     In order to best capture this, I will make a aunch template for each type of server (A and B).
     */
+  
+    var alpha_launch_template = new ec2.LaunchTemplate(scope, config.vpc_name + "AlphaLaunchTemplate", {
+      machineImage: config.ami,
+      instanceType: new ec2.InstanceType(instance_type_alpha),
+      detailedMonitoring: true,
+      requireImdsv2: true,
+      role: server_instance_role,
+      keyPair: keypair,
+      securityGroup: server_a_sg,
+      blockDevices: [
+        {
+          deviceName: "/dev/sda",
+          volume: ec2.BlockDeviceVolume.ebs(ebs_disk_size, ebs_device_options)
+
+        }
+      ]
+    });
+
+    var bravo_launch_template = new ec2.LaunchTemplate(scope, config.vpc_name + "AlphaLaunchTemplate", {
+      machineImage: config.ami,
+      instanceType: new ec2.InstanceType(instance_type_bravo),
+      detailedMonitoring: true,
+      requireImdsv2: true,
+      role: server_instance_role,
+      keyPair: keypair,
+      securityGroup: server_b_sg,
+      blockDevices: [
+        {
+          deviceName: "/dev/sda",
+          volume: ec2.BlockDeviceVolume.ebs(ebs_disk_size, ebs_device_options)
+
+        }
+      ]
+    });
 
   for (var i = 0; i < config.azs.length; i++) {
     var asg_alpha = new autoscaling.AutoScalingGroup(scope, config.vpc_name + "ServerA-ASG-AZ" + String(i+1), {
       autoScalingGroupName: config.vpc_name + "ServerA-ASG-AZ" + String(i+1),
       vpc: happy_vpc, 
-      instanceType:new ec2.InstanceType(instance_type_alpha),
-      role: server_instance_role,
-      machineImage: ec2.MachineImage.genericLinux(config.ami),
+      launchTemplate: alpha_launch_template,
       minCapacity: config.min_alpha_server_capacity,
       maxCapacity: config.max_alpha_server_capacity,
       healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.minutes(config.alpha_server_warmup_time_minutes) }),
       defaultInstanceWarmup: cdk.Duration.minutes(config.alpha_server_warmup_time_minutes),
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),
-      keyPair: keypair,
-      securityGroup: server_a_sg,
       allowAllOutbound: true,
     });
     
     var asg_bravo = new autoscaling.AutoScalingGroup(scope, config.vpc_name + "ServerB-ASG-AZ" + String(i+1), {
       autoScalingGroupName: config.vpc_name + "ServerB-ASG-AZ" + String(i+1),
-      vpc: happy_vpc, 
-      instanceType:new ec2.InstanceType(instance_type_bravo),
-      role: server_instance_role,
-      machineImage: ec2.MachineImage.genericLinux(config.ami),
+      vpc: happy_vpc,
+      launchTemplate: bravo_launch_template,
       minCapacity: config.min_bravo_server_capacity,
       maxCapacity: config.max_bravo_server_capacity,
       healthCheck: autoscaling.HealthCheck.ec2({ grace: cdk.Duration.minutes(config.bravo_server_warmup_time_minutes) }),
       defaultInstanceWarmup: cdk.Duration.minutes(config.bravo_server_warmup_time_minutes),
       vpcSubnets: happy_vpc.selectSubnets({ availabilityZones: config.azs[i], subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS }),
-      keyPair: keypair, 
-      securityGroup: server_b_sg,
       allowAllOutbound: true
     });
     
