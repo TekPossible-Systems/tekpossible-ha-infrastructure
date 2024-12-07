@@ -25,7 +25,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
   // Create s3 bucket for logging of ELB/VPC events
   const logging_s3_bucket = new s3.Bucket(scope, config.vpc_name + "logging-bucket", {
-    bucketName: config.vpc_name + "logging-bucket",
+    bucketName: config.vpc_name.toLowerCase() + "logging-bucket",
     versioned: true,
     removalPolicy: cdk.RemovalPolicy.DESTROY,
     autoDeleteObjects: true
@@ -235,15 +235,21 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     After doing that, the majority of the configurations will be the same. 
     In order to best capture this, I will make a aunch template for each type of server (A and B).
     */
-  
+    var alpha_user_data_obj = ec2.UserData.forLinux({});
+    alpha_user_data_obj.addCommands(alpha_user_data);
+
+    var bravo_user_data_obj = ec2.UserData.forLinux({});
+    bravo_user_data_obj.addCommands(bravo_user_data);
+
     var alpha_launch_template = new ec2.LaunchTemplate(scope, config.vpc_name + "AlphaLaunchTemplate", {
-      machineImage: config.ami,
+      machineImage: ec2.MachineImage.genericLinux(config.ami, {}),
       instanceType: new ec2.InstanceType(instance_type_alpha),
       detailedMonitoring: true,
       requireImdsv2: true,
       role: server_instance_role,
       keyPair: keypair,
       securityGroup: server_a_sg,
+      userData: alpha_user_data_obj,
       blockDevices: [
         {
           deviceName: "/dev/sda",
@@ -254,13 +260,14 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     });
 
     var bravo_launch_template = new ec2.LaunchTemplate(scope, config.vpc_name + "AlphaLaunchTemplate", {
-      machineImage: config.ami,
+      machineImage: ec2.MachineImage.genericLinux(config.ami, {}),
       instanceType: new ec2.InstanceType(instance_type_bravo),
       detailedMonitoring: true,
       requireImdsv2: true,
       role: server_instance_role,
       keyPair: keypair,
       securityGroup: server_b_sg,
+      userData: bravo_user_data_obj,
       blockDevices: [
         {
           deviceName: "/dev/sda",
