@@ -10,6 +10,7 @@ import * as efs from 'aws-cdk-lib/aws-efs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as logs from 'aws-cdk-lib/aws-logs';
 import * as guardduty from 'aws-cdk-lib/aws-guardduty';
+import * as route53_resolver from 'aws-cdk-lib/aws-route53resolver';
 // Read files from the assets folder
 import { readFileSync } from 'fs';
 
@@ -81,7 +82,24 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     destination: ec2.FlowLogDestination.toS3(logging_s3_bucket),
     trafficType: ec2.FlowLogTrafficType.REJECT
   });
+  
+  const cw_log_group_dnslog  =  new logs.LogGroup(scope, config.vpc_name + "DNSLog", {
+    logGroupName: config.stack_base_name + "DNSLog",
+    retention: __CLOUDWATCH_LOG_RETENTION_DAYS,
+    removalPolicy: cdk.RemovalPolicy.DESTROY
+  });
 
+  const route53_query_logging_config = new route53_resolver.CfnResolverQueryLoggingConfig(scope, config.vpc_name + "DNSLogConfig", {
+    destinationArn: cw_log_group_dnslog.logGroupArn,
+    name: config.vpc_name + "DNSLog"
+  });
+  
+  const route53_query_logging_config_assoc = new route53_resolver.CfnResolverQueryLoggingConfigAssociation(scope, config.vpc_name + "DNSLogAssoc", {
+      resolverQueryLogConfigId: route53_query_logging_config.attrId,
+      resourceId: happy_vpc.vpcId
+  });
+
+  route53_query_logging_config_assoc.addDependency(route53_query_logging_config);
   // Create CloudWatch Log Group for VPC Traffic
   const cw_log_group_flowlog = new logs.LogGroup(scope, config.vpc_name + "FlowLog", {
     logGroupName: config.stack_base_name + "FlowLog",
