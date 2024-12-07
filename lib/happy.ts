@@ -85,7 +85,8 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
   // Create CloudWatch Log Group for VPC Traffic
   const cw_log_group_flowlog = new logs.LogGroup(scope, config.vpc_name + "FlowLog", {
     logGroupName: config.stack_base_name + "FlowLog",
-    retention: __CLOUDWATCH_LOG_RETENTION_DAYS
+    retention: __CLOUDWATCH_LOG_RETENTION_DAYS,
+    removalPolicy: cdk.RemovalPolicy.DESTROY
   });
 
   happy_vpc.addFlowLog(config.vpc_name + "FlowLog", {
