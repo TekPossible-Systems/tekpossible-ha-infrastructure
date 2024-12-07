@@ -252,7 +252,8 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       userData: alpha_user_data_obj,
       blockDevices: [
         {
-          deviceName: "/dev/sda",
+          deviceName: "/dev/sda1",
+          mappingEnabled: true,
           volume: ec2.BlockDeviceVolume.ebs(ebs_disk_size, ebs_device_options)
 
         }
@@ -270,7 +271,8 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
       userData: bravo_user_data_obj,
       blockDevices: [
         {
-          deviceName: "/dev/sda",
+          deviceName: "/dev/sda1",
+          mappingEnabled: true,
           volume: ec2.BlockDeviceVolume.ebs(ebs_disk_size, ebs_device_options)
 
         }
