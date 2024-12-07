@@ -20,7 +20,7 @@ import { readFileSync } from 'fs';
 */
 
 function create_happy_vpc(scope: Construct, region_name: string, config: any){
-  // Cloudwatch how long do you want to keep the logs?\
+  // Cloudwatch: how long do you want to keep the logs?
   const __CLOUDWATCH_LOG_RETENTION_DAYS = logs.RetentionDays.TWO_MONTHS;
 
   // Create s3 bucket for logging of ELB/VPC events
@@ -38,6 +38,7 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
     roleName: 'Happy-Server-IAM-Role',
     assumedBy: new iam.ServicePrincipal('ec2.amazonaws.com')
   });
+
   server_instance_role.addManagedPolicy(iam.ManagedPolicy.fromManagedPolicyArn(scope,"Happy-MMROLE_SSM", "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"));
   server_instance_role.addManagedPolicy(iam.ManagedPolicy.fromManagedPolicyArn(scope,"Happy-MMROLE_LOGS", "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"));
   server_instance_role.addManagedPolicy(iam.ManagedPolicy.fromManagedPolicyArn(scope,"Happy-MMROLE_CODE", "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforAWSCodeDeploy"));
@@ -197,7 +198,17 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
   });
   
-
+    /* 
+    We will now create a LaunchTemplate for the Autoscaling groups. This is what needs to happen:
+    Depending on the environment type ("demo", "small", "production"), we will need to attach different (but all encrypted) EBS configurations.
+    Below are the configurations for the disks:
+    * demo -> 10GB 
+    * small -> 128GB
+    * production -> 512GB
+    
+    After doing that, the majority of the configurations will be the same. 
+    In order to best capture this, I will make a aunch template for each type of server (A and B).
+    */
 
   for (var i = 0; i < config.azs.length; i++) {
     var asg_alpha = new autoscaling.AutoScalingGroup(scope, config.vpc_name + "ServerA-ASG-AZ" + String(i+1), {
