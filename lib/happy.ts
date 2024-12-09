@@ -187,7 +187,6 @@ function create_happy_vpc(scope: Construct, region_name: string, config: any){
 
   }
 
-  console.log("Please enable AWS Inspector (V2) as it is great for vulnerability scanning!")
   // Create EFS (AWS NFS) Share
   const efs_security_group = new ec2.SecurityGroup(scope, config.vpc_name + "EFS-SHARE-SG", {
     vpc: happy_vpc
